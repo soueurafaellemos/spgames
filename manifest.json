@@ -1,0 +1,79 @@
+[
+  {
+    "file": "spg_asset_01.png",
+    "mime": "image/png",
+    "bytes": 1410283,
+    "occurrences": 2,
+    "sha256": "425156871949179e583b25a9e0cd423abbdd2d29849935c3c9dc04cad23c3993"
+  },
+  {
+    "file": "spg_asset_02.webp",
+    "mime": "image/webp",
+    "bytes": 1255832,
+    "occurrences": 1,
+    "sha256": "472c529da20899b5a581da65fc38ab8598568652e70ab5761935f062d7893b7d"
+  },
+  {
+    "file": "spg_asset_03.webp",
+    "mime": "image/webp",
+    "bytes": 1237252,
+    "occurrences": 1,
+    "sha256": "ffffee1d5123ccdeaeaaeeffec9ba73009ac1a829760ecc8d66b2814bfdc32ff"
+  },
+  {
+    "file": "spg_asset_04.webp",
+    "mime": "image/webp",
+    "bytes": 1222520,
+    "occurrences": 1,
+    "sha256": "6f9380a9364445bd0739e0f6151e2cf4cfbb9eb5e58fa06fa30c9f99ab81eae3"
+  },
+  {
+    "file": "spg_asset_05.webp",
+    "mime": "image/webp",
+    "bytes": 1088512,
+    "occurrences": 1,
+    "sha256": "26319920ac67c3f699e9aad4dc4ad3108d834510333c449c9eec42121c1e0c23"
+  },
+  {
+    "file": "spg_asset_06.webp",
+    "mime": "image/webp",
+    "bytes": 1043162,
+    "occurrences": 1,
+    "sha256": "7aab4b8f1c9d693ad9dc83a02d4d5e85b50539f7077a9ba39c5de3004f1c2741"
+  },
+  {
+    "file": "spg_asset_07.webp",
+    "mime": "image/webp",
+    "bytes": 1003770,
+    "occurrences": 1,
+    "sha256": "7b0d4eb367e03913dfa2747fd4980a3e0085eca53028ec793268b7a97827a873"
+  },
+  {
+    "file": "spg_asset_08.webp",
+    "mime": "image/webp",
+    "bytes": 1003616,
+    "occurrences": 1,
+    "sha256": "cb3e2bb7a12b6f9c21144f18eeb8843d19f55a2f8909d03c2c2d4462b063dee6"
+  },
+  {
+    "file": "spg_asset_09.webp",
+    "mime": "image/webp",
+    "bytes": 951142,
+    "occurrences": 1,
+    "sha256": "256c94d70c216c6a4ef8c98f54ceeff13259ffd580b359fd72d8425ec06f5b0c"
+  },
+  {
+    "file": "spg_asset_10.png",
+    "mime": "image/png",
+    "bytes": 771407,
+    "occurrences": 1,
+    "sha256": "c8c9510d02c8766381bb289b67f244ddf257d7b415a2980abf57e577ad92e437"
+  },
+  {
+    "file": "spg_asset_11.png",
+    "mime": "image/png",
+    "bytes": 754376,
+    "occurrences": 1,
+    "sha256": "712c5940d0def49802eb48dd20078cfb52e767150519e8ccd9f131c3e7cef0c4"
+  }
+]
