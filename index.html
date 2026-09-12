@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.1A QA FIX 02 — Game Over dynamic alignment + true invisible hit zones + nickname keyboard isolation. SPG 1.0 MASTER remains untouched. -->
+<!-- SPG 1.1A QA FIX 03 — exact yellow-slot alignment + robust Game Over keyboard isolation + nickname focus. SPG 1.0 MASTER remains untouched. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -342,17 +342,17 @@
 }
 .spgScreenArt{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none;}
 .spgDynamic{position:absolute;z-index:2;}
-#gameOver .goDynValue{display:flex;align-items:center;justify-content:center;color:#111;font-family:'Anton','Arial Narrow',Arial,sans-serif;font-size:clamp(22px,5.0vw,38px);line-height:1;white-space:nowrap;transform:none;text-shadow:0 1px 0 rgba(255,255,255,.12);font-variant-numeric:tabular-nums;}
-/* Exact slots measured from the approved 941x1672 Game Over artwork. */
-#goScore{left:8.71%;top:39.00%;width:22.53%;height:5.32%;background:transparent;}
-#goTime{left:38.15%;top:38.94%;width:23.59%;height:5.38%;background:transparent;}
-#goSpeed{left:68.01%;top:39.23%;width:23.80%;height:5.08%;background:transparent;font-size:clamp(18px,4.1vw,31px);}
+#gameOver .goDynValue{display:flex;align-items:center;justify-content:center;color:#111;font-family:'Anton','Arial Narrow',Arial,sans-serif;font-size:clamp(20px,4.4vw,34px);line-height:.92;white-space:nowrap;transform:none;text-shadow:0 1px 0 rgba(255,255,255,.10);font-variant-numeric:tabular-nums;padding:0 4%;overflow:hidden;}
+/* Exact yellow brush slots measured directly from the approved 941x1672 Game Over artwork. */
+#goScore{left:8.8204%;top:39.3541%;width:22.4230%;height:4.7249%;background:transparent;}
+#goTime{left:38.1509%;top:39.1746%;width:23.5919%;height:5.0239%;background:transparent;}
+#goSpeed{left:68.2253%;top:39.2943%;width:23.5919%;height:4.7847%;background:transparent;font-size:clamp(16px,3.5vw,27px);padding-left:2.5%;padding-right:2.5%;}
 #nicknameInput{
   left:23.91%;top:51.38%;width:51.97%;height:5.98%;z-index:8;
   border:0;outline:0;background:transparent;color:#f4f4f4;border-radius:0;
   font-family:'Permanent Marker','Comic Sans MS',cursive;font-size:clamp(24px,5.2vw,40px);line-height:1;
   text-transform:uppercase;padding:0 3.2%;caret-color:#fff;box-shadow:none;
-  pointer-events:auto !important;touch-action:manipulation !important;user-select:text !important;-webkit-user-select:text !important;
+  pointer-events:auto !important;touch-action:manipulation !important;user-select:text !important;-webkit-user-select:text !important;cursor:text;
 }
 
 #nicknameInput::placeholder{color:#aaa;opacity:.75;}
@@ -2711,17 +2711,19 @@ function isTextEntryTarget(target){
   return !!target && (target===ui.nicknameInput || target.tagName==='INPUT' || target.tagName==='TEXTAREA' || target.isContentEditable);
 }
 addEventListener('keydown',e=>{
-  /* Never let gameplay shortcuts consume nickname typing (R used to restart the run). */
-  if(isTextEntryTarget(e.target))return;
+  /* Game Over is a text/UI state: NO gameplay keyboard shortcut may run here. */
+  if(gameOver)return;
+  if(isTextEntryTarget(e.target) || document.activeElement===ui.nicknameInput)return;
   if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();
   if(running&&['ArrowUp','ArrowDown','KeyW','KeyS','Space','KeyX'].includes(e.code))hidePreRunOverlay();
   if(e.code==='ArrowUp'||e.code==='KeyW')keys.up=true;if(e.code==='ArrowDown'||e.code==='KeyS')keys.down=true;
   if(e.code==='Space'&&!e.repeat)beginJump(true);
   if(e.code==='KeyX'&&!e.repeat)requestSpin();
-  if(e.code==='KeyR'){startGame();flash('RESET')}if(e.code==='KeyD')showDebug=!showDebug;if((e.code==='Enter'||e.code==='NumpadEnter')&&gameOver)ui.sendScoreBtn.click();
+  if(e.code==='KeyR'&&running){startGame();flash('RESET')}if(e.code==='KeyD')showDebug=!showDebug;if((e.code==='Enter'||e.code==='NumpadEnter')&&gameOver)ui.sendScoreBtn.click();
 });
 addEventListener('keyup',e=>{
-  if(isTextEntryTarget(e.target))return;
+  if(gameOver)return;
+  if(isTextEntryTarget(e.target) || document.activeElement===ui.nicknameInput)return;
   if(e.code==='ArrowUp'||e.code==='KeyW')keys.up=false;if(e.code==='ArrowDown'||e.code==='KeyS')keys.down=false;
   if(e.code==='Space')setJumpHeld(false);
 });
@@ -2730,8 +2732,8 @@ ui.howBtn.addEventListener('click',e=>{e.stopPropagation();showHowTo();});
 ui.howBackBtn.addEventListener('click',e=>{e.stopPropagation();showStartScreen();});
 ui.howStartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
 ui.restartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
-ui.nicknameInput.addEventListener('pointerdown',e=>{e.stopPropagation();});
-ui.nicknameInput.addEventListener('click',e=>{e.stopPropagation();});
+ui.nicknameInput.addEventListener('pointerdown',e=>{e.stopPropagation();try{ui.nicknameInput.focus({preventScroll:true});}catch(_){ui.nicknameInput.focus();}});
+ui.nicknameInput.addEventListener('click',e=>{e.stopPropagation();try{ui.nicknameInput.focus({preventScroll:true});}catch(_){ui.nicknameInput.focus();}});
 ui.nicknameInput.addEventListener('input',()=>{const v=normalizeNickname(ui.nicknameInput.value);if(ui.nicknameInput.value!==v)ui.nicknameInput.value=v;ui.nicknameError.classList.remove('show');});
 ui.nicknameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ui.sendScoreBtn.click();}});
 ui.sendScoreBtn.addEventListener('click',e=>{e.stopPropagation();const name=normalizeNickname(ui.nicknameInput.value);ui.nicknameInput.value=name;if(!name){ui.nicknameError.classList.add('show');ui.nicknameInput.focus();return;}saveNickname(name);const entry=currentRunEntry(name);lastSubmittedPrototypeEntry=entry;saveMockScore(entry);ui.submitToast.textContent='SCORE SALVO NESTE TESTE';ui.submitToast.classList.add('show');setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(entry);},500);});
