@@ -1,10 +1,14 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
+<!-- SPG 1.1A — Ranking UI Prototype. SPG 1.0 MASTER remains untouched. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&display=swap" rel="stylesheet">
 <title>São Paulo Games — V13.22.2 QA Ponte Tráfego Baseline Única / V13.24.19 Traffic 18 Safe + Music</title>
 <style>
   :root { --yellow:#f6bd13; --red:#e83b20; --ink:#080a0d; }
@@ -329,6 +333,52 @@
   #bootLoaderFill{width:100%;height:100%;background:#f6bd13;transform-origin:left center;animation:bootPulse 1.1s ease-in-out infinite} 
   #bootLoaderLabel{font-size:14px;opacity:.9} 
   @keyframes bootPulse{0%{transform:scaleX(.2)}50%{transform:scaleX(1)}100%{transform:scaleX(.2)}}
+
+/* ================= SPG 1.1A — RANKING UI PROTOTYPE ================= */
+#gameOver, #rankingScreen{
+  position:absolute !important; inset:0; z-index:60; padding:0 !important;
+  display:none; align-items:stretch !important; justify-content:stretch !important;
+  background:#080808 !important; overflow:hidden;
+}
+.spgScreenArt{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none;}
+.spgDynamic{position:absolute;z-index:2;}
+#gameOver .goDynValue{display:flex;align-items:center;justify-content:center;color:#111;font-family:'Anton','Arial Narrow',Arial,sans-serif;font-size:clamp(24px,6.1vw,46px);line-height:1;white-space:nowrap;transform:skew(-4deg);text-shadow:0 1px 0 rgba(255,255,255,.16);}
+#goScore{left:9.0%;top:40.0%;width:23.8%;height:4.65%;background:transparent;}
+#goTime{left:37.6%;top:40.0%;width:25.0%;height:4.65%;background:transparent;}
+#goSpeed{left:66.2%;top:40.0%;width:24.3%;height:4.65%;background:transparent;font-size:clamp(20px,5.0vw,39px);}
+#nicknameInput{
+  left:23.2%;top:51.0%;width:53.0%;height:5.8%;z-index:4;
+  border:0;outline:0;background:transparent;color:#f4f4f4;border-radius:2px;
+  font-family:'Permanent Marker','Comic Sans MS',cursive;font-size:clamp(25px,6vw,48px);line-height:1;
+  text-transform:uppercase;padding:0 4%;caret-color:#fff;box-shadow:none;
+}
+#nicknameInput::placeholder{color:#aaa;opacity:.75;}
+#nicknameInput:focus{background:rgba(255,255,255,.025);}
+#nicknameError{left:23%;top:57.4%;width:54%;text-align:center;color:#ffdf00;font:400 clamp(10px,2.6vw,18px)/1.2 'Permanent Marker','Comic Sans MS',cursive;opacity:0;transition:opacity .15s;}
+#nicknameError.show{opacity:1;}
+.spgHit{position:absolute;z-index:6;border:0;background:transparent;color:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#sendScoreBtn{left:17.2%;top:69.4%;width:65.0%;height:7.3%;}
+#viewRankingBtn{left:17.2%;top:77.1%;width:65.0%;height:7.3%;}
+#restartBtn{left:17.2%;top:85.4%;width:65.0%;height:7.4%;}
+#submitToast{left:20%;top:64.4%;width:60%;padding:7px 10px;border-radius:999px;background:rgba(8,9,10,.92);border:1px solid rgba(255,214,0,.7);color:#ffd500;text-align:center;font:400 clamp(11px,2.8vw,18px)/1 'Permanent Marker','Comic Sans MS',cursive;opacity:0;transform:translateY(6px);transition:.18s;pointer-events:none;}
+#submitToast.show{opacity:1;transform:translateY(0);}
+#rankingRows{left:16.1%;top:29.3%;width:67.0%;height:38.6%;display:grid;grid-template-rows:repeat(10,1fr);gap:.45%;}
+.rankingRow{display:grid;grid-template-columns:21% 43% 36%;align-items:center;background:transparent;border:1px solid rgba(210,210,210,.72);border-radius:8px;color:#eee;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.05) inset;}
+.rankingRow.isTop{border-color:#f2cc05;background:transparent;color:#f6d21c;}
+.rankingRow.isPlayer{border-color:#f2cc05;box-shadow:0 0 0 2px rgba(242,204,5,.24) inset,0 0 10px rgba(242,204,5,.10);}
+.rankPos,.rankName,.rankScore{display:flex;align-items:center;height:100%;white-space:nowrap;overflow:hidden;}
+#rankingRows .rankPos{visibility:hidden;}
+.rankPos{justify-content:center;font:400 clamp(17px,4.2vw,34px)/1 'Permanent Marker','Comic Sans MS',cursive;}
+.rankName{justify-content:center;padding-left:0;font:400 clamp(16px,4.0vw,33px)/1 'Permanent Marker','Comic Sans MS',cursive;text-transform:uppercase;}
+.rankScore{justify-content:center;padding-right:0;font:400 clamp(17px,4.1vw,34px)/1 'Anton','Arial Narrow',Arial,sans-serif;letter-spacing:.02em;}
+.rankCrown{font-size:.78em;margin-right:4px;color:#f2cc05;}
+#rankingOwnRow{left:16.1%;top:71.7%;width:67.0%;height:4.7%;display:grid;grid-template-columns:21% 43% 36%;align-items:center;background:transparent;border:2px solid #f2cc05;border-radius:10px;color:#fff;overflow:hidden;}
+#rankingOwnRow .rankPos,#rankingOwnRow .rankName{font:400 clamp(16px,4vw,32px)/1 'Permanent Marker','Comic Sans MS',cursive;}
+#rankingOwnRow .rankScore{font:400 clamp(17px,4.1vw,34px)/1 'Anton','Arial Narrow',Arial,sans-serif;}
+#rankBackBtn{left:18.6%;top:78.2%;width:62.8%;height:7.5%;}
+#rankRestartBtn{left:18.6%;top:86.6%;width:62.8%;height:7.5%;}
+@media (max-width:380px){#nicknameInput{font-size:25px}.rankingRow{border-radius:6px}}
+
 </style>
 
   <!-- Google tag (gtag.js) — SP Games GA4 -->
@@ -385,24 +435,26 @@
       <button id="howStartBtn" class="screenHit howPrimary" aria-label="Entendi"></button>
     </div>
   </div>
-  <div id="gameOver">
-    <div id="gameOverCard">
-      <div class="goHeader">
-        <div class="goSticker"><img class="goStickerAsset" src="assets/img_d73f2d07c680de72.webp" alt="GAME OVER"></div>
-        <p class="goLead">Seu rolê acabou. <b>Desvie dos obstáculos</b>, encaixe combos e tente bater sua melhor pontuação.</p>
-      </div>
-      <div class="resultGrid">
-        <div class="resultBox"><span>SCORE</span><strong id="goScore">000000</strong></div>
-        <div class="resultBox"><span>MELHOR PONTUAÇÃO</span><strong id="goBest">000000</strong></div>
-        <div class="resultBox"><span>OBSTÁCULOS</span><strong id="goClears">0</strong></div>
-        <div class="resultBox"><span>TEMPO</span><strong id="goTime">00:00</strong></div>
-        <div class="resultBox"><span>COMBO MÁXIMO</span><strong id="goMaxCombo">x1.00</strong></div>
-      </div>
-      <div class="goActions">
-        <button id="restartBtn">↻&nbsp;&nbsp;TENTAR NOVAMENTE</button>
-        <p class="goHint">TOQUE PARA JOGAR DE NOVO</p>
-      </div>
+  <div id="gameOver" aria-label="Game Over">
+    <img class="spgScreenArt" src="assets/screen_gameover_base.png" alt="">
+    <div id="goScore" class="spgDynamic goDynValue">0</div>
+    <div id="goTime" class="spgDynamic goDynValue">00:00</div>
+    <div id="goSpeed" class="spgDynamic goDynValue">0 km/h</div>
+    <input id="nicknameInput" class="spgDynamic" maxlength="8" inputmode="text" autocomplete="nickname" autocapitalize="characters" spellcheck="false" aria-label="Seu nome, máximo 8 caracteres" placeholder="NOME">
+    <div id="nicknameError" class="spgDynamic">DIGITE SEU NOME</div>
+    <div id="submitToast" class="spgDynamic">SCORE SALVO NESTE TESTE</div>
+    <button id="sendScoreBtn" class="spgHit" aria-label="Enviar score">Enviar score</button>
+    <button id="viewRankingBtn" class="spgHit" aria-label="Ver ranking">Ver ranking</button>
+    <button id="restartBtn" class="spgHit" aria-label="Jogar de novo">Jogar de novo</button>
+  </div>
+  <div id="rankingScreen" aria-label="Ranking">
+    <img class="spgScreenArt" src="assets/screen_ranking_base.png" alt="">
+    <div id="rankingRows" class="spgDynamic"></div>
+    <div id="rankingOwnRow" class="spgDynamic">
+      <div id="ownRankPos" class="rankPos">—</div><div id="ownRankName" class="rankName">—</div><div id="ownRankScore" class="rankScore">—</div>
     </div>
+    <button id="rankBackBtn" class="spgHit" aria-label="Voltar">Voltar</button>
+    <button id="rankRestartBtn" class="spgHit" aria-label="Jogar de novo">Jogar de novo</button>
   </div>
 </div>
 <script>
@@ -1622,7 +1674,7 @@ const ui={
  state:document.getElementById('stateTag'), hint:document.getElementById('mobileHint'), toast:document.getElementById('toast'), preRunOverlay:document.getElementById('preRunOverlay'), preRunSteerHint:document.getElementById('preRunSteerHint'), preRunActionHint:document.getElementById('preRunActionHint'), debug:document.getElementById('debug'), impactFlash:document.getElementById('impactFlash'), hud:document.getElementById('hud'),
  speedBox:document.getElementById('speedBox'), triesWrap:document.getElementById('triesWrap'),
  start:document.getElementById('start'), startBtn:document.getElementById('startBtn'), howBtn:document.getElementById('howBtn'), howTo:document.getElementById('howTo'), howBackBtn:document.getElementById('howBackBtn'), howStartBtn:document.getElementById('howStartBtn'), charge:document.getElementById('jumpCharge'), chargeFill:document.getElementById('jumpChargeFill'),
- gameOver:document.getElementById('gameOver'), goScore:document.getElementById('goScore'), goBest:document.getElementById('goBest'), goTime:document.getElementById('goTime'), goClears:document.getElementById('goClears'), goMaxCombo:document.getElementById('goMaxCombo'), restartBtn:document.getElementById('restartBtn')
+ gameOver:document.getElementById('gameOver'), goScore:document.getElementById('goScore'), goTime:document.getElementById('goTime'), goSpeed:document.getElementById('goSpeed'), nicknameInput:document.getElementById('nicknameInput'), nicknameError:document.getElementById('nicknameError'), submitToast:document.getElementById('submitToast'), sendScoreBtn:document.getElementById('sendScoreBtn'), viewRankingBtn:document.getElementById('viewRankingBtn'), restartBtn:document.getElementById('restartBtn'), rankingScreen:document.getElementById('rankingScreen'), rankingRows:document.getElementById('rankingRows'), rankingOwnRow:document.getElementById('rankingOwnRow'), ownRankPos:document.getElementById('ownRankPos'), ownRankName:document.getElementById('ownRankName'), ownRankScore:document.getElementById('ownRankScore'), rankBackBtn:document.getElementById('rankBackBtn'), rankRestartBtn:document.getElementById('rankRestartBtn')
 };
 
 const keys={up:false,down:false};
@@ -1654,6 +1706,7 @@ function hidePreRunOverlay(immediate=false){
 let spgRunGeneration=0; // V13.24.22 QA: invalidates stale RAF/audio callbacks across restarts
 let rolling=false, gameOver=false, gameOverPending=false;
 let elapsed=0, ambientElapsed=0, distance=0, nextSpawn=360, score=0, falls=0, speed=0;
+let runMaxDisplaySpeed=0;
 let highScore=(()=>{try{return Number(localStorage.getItem('spgHighScore')||0)}catch(_){return 0}})();
 let tries=3, maxTries=3, obstaclesCleared=0;
 let comboChain=0, comboMult=1, maxComboMult=1;
@@ -1903,7 +1956,20 @@ function registerObstacleClear(o){
   }
   playSfxSafe(clearSfx);
 }
-function updateGameOverUI(){ui.goScore.textContent=fmtScore(score);ui.goBest.textContent=fmtScore(highScore);ui.goTime.textContent=fmtTime(elapsed);ui.goClears.textContent=String(obstaclesCleared);ui.goMaxCombo.textContent=`x${maxComboMult.toFixed(2)}`}
+const MOCK_RANKING_SEED=[
+{name:'DUDA',score:25670},{name:'LEO',score:23410},{name:'BIA',score:21905},{name:'NANDO',score:20330},{name:'GABI',score:19120},{name:'NINA',score:17860},{name:'JOAO',score:16540},{name:'BRUNO',score:15320},{name:'ANA',score:14200},{name:'CAIO',score:13760},{name:'ZAZA',score:13220},{name:'MAYA',score:12810},{name:'ZECA',score:12440},{name:'LULU',score:11890}
+];
+function getSavedNickname(){try{return (localStorage.getItem('spgNickname')||'').slice(0,8)}catch(_){return ''}}
+function saveNickname(v){try{localStorage.setItem('spgNickname',v)}catch(_){}}
+function normalizeNickname(v){return String(v||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'').slice(0,8)}
+function getMockScores(){let extra=[];try{extra=JSON.parse(localStorage.getItem('spgMockScores')||'[]')}catch(_){extra=[]}return MOCK_RANKING_SEED.concat(Array.isArray(extra)?extra:[]).sort((a,b)=>b.score-a.score||((a.ts||0)-(b.ts||0)));}
+function saveMockScore(entry){try{let extra=[];try{extra=JSON.parse(localStorage.getItem('spgMockScores')||'[]')}catch(_){extra=[]}extra=(Array.isArray(extra)?extra:[]).concat(entry).slice(-30);localStorage.setItem('spgMockScores',JSON.stringify(extra));}catch(_){}}
+function currentRunEntry(name){return {name,score:Math.round(score),time:elapsed,maxSpeed:Math.round(runMaxDisplaySpeed),ts:Date.now(),id:'run-'+Date.now()}}
+function updateGameOverUI(){ui.goScore.textContent=Number(Math.round(score)).toLocaleString('pt-BR');ui.goTime.textContent=fmtTime(elapsed);ui.goSpeed.textContent=`${Math.round(runMaxDisplaySpeed)} km/h`;ui.nicknameInput.value=getSavedNickname();ui.nicknameError.classList.remove('show');ui.submitToast.classList.remove('show');}
+function renderMockRanking(playerEntry=null){const all=getMockScores();const top=all.slice(0,10);ui.rankingRows.innerHTML=top.map((r,i)=>`<div class="rankingRow ${i===0?'isTop':''} ${playerEntry&&r.id===playerEntry.id?'isPlayer':''}"><div class="rankPos">${i===0?'<span class="rankCrown">♛</span>':''}${String(i+1).padStart(2,'0')}</div><div class="rankName">${escHtml(r.name)}</div><div class="rankScore">${Number(r.score).toLocaleString('pt-BR')}</div></div>`).join('');let own=playerEntry;if(!own){const nick=getSavedNickname();if(nick)own=all.find(r=>r.name===nick)||null;}if(own){const idx=all.findIndex(r=>r===own||r.id===own.id);ui.ownRankPos.textContent=idx>=0?`${idx+1}º`:'—';ui.ownRankName.textContent=own.name;ui.ownRankScore.textContent=Number(own.score).toLocaleString('pt-BR');}else{ui.ownRankPos.textContent='';ui.ownRankName.textContent='';ui.ownRankScore.textContent='';}}
+function showRanking(playerEntry=null){ui.gameOver.style.display='none';ui.start.style.display='none';ui.howTo.style.display='none';ui.rankingScreen.style.display='flex';renderMockRanking(playerEntry);syncOverlayHud();}
+function returnToGameOver(){ui.rankingScreen.style.display='none';ui.gameOver.style.display='flex';syncOverlayHud();}
+let lastSubmittedPrototypeEntry=null;
 function finishRun(){
   if(gameOver)return;
   gameOver=true;gameOverPending=false;rolling=false;paused=false;stopRunMusic(true);playSfxSafe('gameOver');saveHighScore();updateGameOverUI();updateUI();ui.gameOver.style.display='flex';syncOverlayHud();running=false;
@@ -1927,7 +1993,8 @@ function syncOverlayHud(){
   const startVisible = getComputedStyle(ui.start).display !== 'none';
   const howVisible = getComputedStyle(ui.howTo).display !== 'none';
   const gameOverVisible = getComputedStyle(ui.gameOver).display !== 'none';
-  const blockingOverlay = (startVisible || howVisible || gameOverVisible);
+  const rankingVisible = getComputedStyle(ui.rankingScreen).display !== 'none';
+  const blockingOverlay = (startVisible || howVisible || gameOverVisible || rankingVisible);
   ui.hud.style.display = blockingOverlay ? 'none' : 'flex';
   if(blockingOverlay){
     ui.toast.style.opacity='0';
@@ -1935,11 +2002,11 @@ function syncOverlayHud(){
     hidePreRunOverlay(true);
   }
 }
-function showStartScreen(){hidePreRunOverlay(true);ui.howTo.style.display='none';ui.gameOver.style.display='none';ui.start.style.display='flex';syncOverlayHud();}
-function showHowTo(){hidePreRunOverlay(true);ui.start.style.display='none';ui.gameOver.style.display='none';ui.howTo.style.display='flex';syncOverlayHud();}
+function showStartScreen(){hidePreRunOverlay(true);ui.howTo.style.display='none';ui.gameOver.style.display='none';ui.rankingScreen.style.display='none';ui.start.style.display='flex';syncOverlayHud();}
+function showHowTo(){hidePreRunOverlay(true);ui.start.style.display='none';ui.gameOver.style.display='none';ui.rankingScreen.style.display='none';ui.howTo.style.display='flex';syncOverlayHud();}
 function reset(){
   rebuildCityWorld();rebuildStage5World();
-  elapsed=0;ambientElapsed=0;distance=0;nextSpawn=rand(225,330);score=0;falls=0;speed=0;laneY=814;rolling=false;gameOver=false;gameOverPending=false;
+  elapsed=0;ambientElapsed=0;distance=0;nextSpawn=rand(225,330);score=0;falls=0;speed=0;runMaxDisplaySpeed=0;laneY=814;rolling=false;gameOver=false;gameOverPending=false;
   rebuildProceduralSidewalk();
   rebuildProceduralWall();
   tries=maxTries;obstaclesCleared=0;comboChain=0;comboMult=1;maxComboMult=1;
@@ -1947,7 +2014,7 @@ function reset(){
   kbdPrevDir=0;kbdTravel=0;touchPrevDir=0;touchTravel=0;lastPumpAt=-99;lastTapAt=-9999;hintT=0;steerPointer.id=null;actionPointer.id=null;actionPointer.spinGesture=false;ui.charge.style.display='none';
   floatingTexts=[];impactFlashT=0;riskPeakAnnounced=false;newBestAnnounced=false;runStartBest=highScore;ui.impactFlash.style.opacity='0';
   hidePreRunOverlay(true);
-  ui.start.style.display='none';ui.howTo.style.display='none';ui.gameOver.style.display='none';
+  ui.start.style.display='none';ui.howTo.style.display='none';ui.gameOver.style.display='none';ui.rankingScreen.style.display='none';
   syncOverlayHud();
   updateUI();
 }
@@ -2244,7 +2311,7 @@ function update(dt){
     updateFeedback(dt);if(toastT>0){toastT-=dt;ui.toast.style.opacity=String(clamp(toastT/.25,0,1));}else ui.toast.style.opacity='0';
     return;
   }
-  elapsed+=dt;updatePlayer(dt);
+  elapsed+=dt;updatePlayer(dt);runMaxDisplaySpeed=Math.max(runMaxDisplaySpeed,displaySpeedKmh(speed));
   if(state==='fall'||state==='getup'){
     const carry=crashCarryT>0?Math.max(speed,crashCarrySpeed):speed;
     updateObstacles(dt,false,carry);
@@ -2642,7 +2709,7 @@ addEventListener('keydown',e=>{
   if(e.code==='ArrowUp'||e.code==='KeyW')keys.up=true;if(e.code==='ArrowDown'||e.code==='KeyS')keys.down=true;
   if(e.code==='Space'&&!e.repeat)beginJump(true);
   if(e.code==='KeyX'&&!e.repeat)requestSpin();
-  if(e.code==='KeyR'){startGame();flash('RESET')}if(e.code==='KeyD')showDebug=!showDebug;if((e.code==='Enter'||e.code==='NumpadEnter')&&gameOver)startGame();
+  if(e.code==='KeyR'){startGame();flash('RESET')}if(e.code==='KeyD')showDebug=!showDebug;if((e.code==='Enter'||e.code==='NumpadEnter')&&gameOver&&document.activeElement!==ui.nicknameInput)ui.sendScoreBtn.click();
 });
 addEventListener('keyup',e=>{
   if(e.code==='ArrowUp'||e.code==='KeyW')keys.up=false;if(e.code==='ArrowDown'||e.code==='KeyS')keys.down=false;
@@ -2653,6 +2720,12 @@ ui.howBtn.addEventListener('click',e=>{e.stopPropagation();showHowTo();});
 ui.howBackBtn.addEventListener('click',e=>{e.stopPropagation();showStartScreen();});
 ui.howStartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
 ui.restartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
+ui.nicknameInput.addEventListener('input',()=>{const v=normalizeNickname(ui.nicknameInput.value);if(ui.nicknameInput.value!==v)ui.nicknameInput.value=v;ui.nicknameError.classList.remove('show');});
+ui.nicknameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ui.sendScoreBtn.click();}});
+ui.sendScoreBtn.addEventListener('click',e=>{e.stopPropagation();const name=normalizeNickname(ui.nicknameInput.value);ui.nicknameInput.value=name;if(!name){ui.nicknameError.classList.add('show');ui.nicknameInput.focus();return;}saveNickname(name);const entry=currentRunEntry(name);lastSubmittedPrototypeEntry=entry;saveMockScore(entry);ui.submitToast.textContent='SCORE SALVO NESTE TESTE';ui.submitToast.classList.add('show');setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(entry);},500);});
+ui.viewRankingBtn.addEventListener('click',e=>{e.stopPropagation();showRanking(lastSubmittedPrototypeEntry);});
+ui.rankBackBtn.addEventListener('click',e=>{e.stopPropagation();returnToGameOver();});
+ui.rankRestartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
 syncOverlayHud();
 
 // V96 DIRECT FIX — clean base V93 + exact approved deltas only.
