@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.1A QA FIX 03 — exact yellow-slot alignment + robust Game Over keyboard isolation + nickname focus. SPG 1.0 MASTER remains untouched. -->
+<!-- SPG 1.1B — Online Ranking / Supabase. Based on approved SPG 1.1A QA FIX 04. SPG 1.0 MASTER remains untouched. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -446,7 +446,7 @@
     <div id="goSpeed" class="spgDynamic goDynValue">0 km/h</div>
     <input id="nicknameInput" class="spgDynamic" type="text" maxlength="8" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Seu nome, máximo 8 caracteres" placeholder="NOME">
     <div id="nicknameError" class="spgDynamic">DIGITE SEU NOME</div>
-    <div id="submitToast" class="spgDynamic">SCORE SALVO NESTE TESTE</div>
+    <div id="submitToast" class="spgDynamic">ENVIANDO SCORE...</div>
     <div id="sendScoreBtn" class="spgHit" role="button" aria-label="Enviar score"></div>
     <div id="viewRankingBtn" class="spgHit" role="button" aria-label="Ver ranking"></div>
     <div id="restartBtn" class="spgHit" role="button" aria-label="Jogar de novo"></div>
@@ -1960,20 +1960,93 @@ function registerObstacleClear(o){
   }
   playSfxSafe(clearSfx);
 }
-const MOCK_RANKING_SEED=[
-{name:'DUDA',score:25670},{name:'LEO',score:23410},{name:'BIA',score:21905},{name:'NANDO',score:20330},{name:'GABI',score:19120},{name:'NINA',score:17860},{name:'JOAO',score:16540},{name:'BRUNO',score:15320},{name:'ANA',score:14200},{name:'CAIO',score:13760},{name:'ZAZA',score:13220},{name:'MAYA',score:12810},{name:'ZECA',score:12440},{name:'LULU',score:11890}
-];
+const SUPABASE_URL='https://wnizidzpqoeipcyqkhss.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_nU27LySUfzHaI7xl02pqlw_5qDwNEqo';
+const SUPABASE_TABLE='spg_scores';
+let currentRunId='';
+let currentRunSubmitted=false;
+let scoreSubmitInFlight=false;
+let lastSubmittedOnlineEntry=null;
+
 function getSavedNickname(){try{return (localStorage.getItem('spgNickname')||'').slice(0,8)}catch(_){return ''}}
-function saveNickname(v){try{localStorage.setItem('spgNickname',v)}catch(_){}}
+function saveNickname(v){try{localStorage.setItem('spgNickname',v)}catch(_){} }
 function normalizeNickname(v){return String(v||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'').slice(0,8)}
-function getMockScores(){let extra=[];try{extra=JSON.parse(localStorage.getItem('spgMockScores')||'[]')}catch(_){extra=[]}return MOCK_RANKING_SEED.concat(Array.isArray(extra)?extra:[]).sort((a,b)=>b.score-a.score||((a.ts||0)-(b.ts||0)));}
-function saveMockScore(entry){try{let extra=[];try{extra=JSON.parse(localStorage.getItem('spgMockScores')||'[]')}catch(_){extra=[]}extra=(Array.isArray(extra)?extra:[]).concat(entry).slice(-30);localStorage.setItem('spgMockScores',JSON.stringify(extra));}catch(_){}}
-function currentRunEntry(name){return {name,score:Math.round(score),time:elapsed,maxSpeed:Math.round(runMaxDisplaySpeed),ts:Date.now(),id:'run-'+Date.now()}}
-function updateGameOverUI(){ui.goScore.textContent=Number(Math.round(score)).toLocaleString('pt-BR');ui.goTime.textContent=fmtTime(elapsed);ui.goSpeed.textContent=`${Math.round(runMaxDisplaySpeed)} km/h`;ui.nicknameInput.value=getSavedNickname();ui.nicknameError.classList.remove('show');ui.submitToast.classList.remove('show');}
-function renderMockRanking(playerEntry=null){const all=getMockScores();const top=all.slice(0,10);ui.rankingRows.innerHTML=top.map((r,i)=>`<div class="rankingRow ${i===0?'isTop':''} ${playerEntry&&r.id===playerEntry.id?'isPlayer':''}"><div class="rankPos">${i===0?'<span class="rankCrown">♛</span>':''}${String(i+1).padStart(2,'0')}</div><div class="rankName">${escHtml(r.name)}</div><div class="rankScore">${Number(r.score).toLocaleString('pt-BR')}</div></div>`).join('');let own=playerEntry;if(!own){const nick=getSavedNickname();if(nick)own=all.find(r=>r.name===nick)||null;}if(own){const idx=all.findIndex(r=>r===own||r.id===own.id);ui.ownRankPos.textContent=idx>=0?`${idx+1}º`:'—';ui.ownRankName.textContent=own.name;ui.ownRankScore.textContent=Number(own.score).toLocaleString('pt-BR');}else{ui.ownRankPos.textContent='';ui.ownRankName.textContent='';ui.ownRankScore.textContent='';}}
-function showRanking(playerEntry=null){ui.gameOver.style.display='none';ui.start.style.display='none';ui.howTo.style.display='none';ui.rankingScreen.style.display='flex';renderMockRanking(playerEntry);syncOverlayHud();}
+function makeRunId(){
+  try{if(globalThis.crypto&&typeof crypto.randomUUID==='function')return crypto.randomUUID();}catch(_){}
+  const bytes=new Uint8Array(16);
+  try{crypto.getRandomValues(bytes);}catch(_){for(let i=0;i<16;i++)bytes[i]=Math.floor(Math.random()*256);}
+  bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+  const h=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+}
+function currentRunEntry(name){return {name,score:Math.round(score),time:Math.max(1,Math.round(elapsed)),maxSpeed:Math.round(runMaxDisplaySpeed),runId:currentRunId||makeRunId()}}
+function updateGameOverUI(){ui.goScore.textContent=Number(Math.round(score)).toLocaleString('pt-BR');ui.goTime.textContent=fmtTime(elapsed);ui.goSpeed.textContent=`${Math.round(runMaxDisplaySpeed)} km/h`;ui.nicknameInput.value=getSavedNickname();ui.nicknameError.textContent='DIGITE SEU NOME';ui.nicknameError.classList.remove('show');ui.submitToast.classList.remove('show');}
+
+async function supabaseRequest(path,{method='GET',body=null,prefer=''}={}){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),9000);
+  try{
+    const headers={apikey:SUPABASE_PUBLISHABLE_KEY,Accept:'application/json'};
+    if(body!==null)headers['Content-Type']='application/json';
+    if(prefer)headers.Prefer=prefer;
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{method,headers,body:body===null?undefined:JSON.stringify(body),signal:controller.signal,cache:'no-store'});
+    const raw=await res.text();
+    let data=null;
+    if(raw){try{data=JSON.parse(raw)}catch(_){data=raw}}
+    if(!res.ok){const msg=(data&&typeof data==='object'&&(data.message||data.details||data.hint))||`HTTP ${res.status}`;throw new Error(String(msg));}
+    return data;
+  }finally{clearTimeout(timer)}
+}
+function onlineRowToEntry(r){return r?{id:r.id,name:r.nickname,score:Number(r.score)||0,time:Number(r.time_seconds)||0,maxSpeed:Number(r.max_speed)||0,createdAt:r.created_at||''}:null}
+async function fetchTopScores(){
+  const q=`${SUPABASE_TABLE}?select=id,nickname,score,time_seconds,max_speed,created_at&order=score.desc,time_seconds.asc,created_at.asc&limit=10`;
+  const rows=await supabaseRequest(q);
+  return Array.isArray(rows)?rows.map(onlineRowToEntry):[];
+}
+async function fetchBestForNickname(name){
+  if(!name)return null;
+  const q=`${SUPABASE_TABLE}?nickname=eq.${encodeURIComponent(name)}&select=id,nickname,score,time_seconds,max_speed,created_at&order=score.desc,time_seconds.asc,created_at.asc&limit=1`;
+  const rows=await supabaseRequest(q);
+  return Array.isArray(rows)&&rows[0]?onlineRowToEntry(rows[0]):null;
+}
+async function fetchRankForId(id){
+  if(!id)return null;
+  const rank=await supabaseRequest('rpc/get_score_rank',{method:'POST',body:{p_id:id}});
+  const n=Number(rank);
+  return Number.isFinite(n)&&n>0?n:null;
+}
+async function submitScoreOnline(entry){
+  const payload={nickname:entry.name,score:entry.score,time_seconds:entry.time,max_speed:entry.maxSpeed,run_id:entry.runId};
+  const rows=await supabaseRequest(`${SUPABASE_TABLE}?select=id,nickname,score,time_seconds,max_speed,created_at`,{method:'POST',body:payload,prefer:'return=representation'});
+  if(!Array.isArray(rows)||!rows[0])throw new Error('Resposta vazia do ranking');
+  return onlineRowToEntry(rows[0]);
+}
+function renderOnlineRanking(top=[],own=null,ownRank=null){
+  ui.rankingRows.innerHTML=top.map((r,i)=>`<div class="rankingRow ${i===0?'isTop':''} ${own&&r.id===own.id?'isPlayer':''}"><div class="rankPos">${String(i+1).padStart(2,'0')}</div><div class="rankName">${escHtml(r.name)}</div><div class="rankScore">${Number(r.score).toLocaleString('pt-BR')}</div></div>`).join('');
+  if(own){ui.ownRankPos.textContent=ownRank?`${ownRank}º`:'—';ui.ownRankName.textContent=own.name;ui.ownRankScore.textContent=Number(own.score).toLocaleString('pt-BR');}
+  else{ui.ownRankPos.textContent='';ui.ownRankName.textContent='';ui.ownRankScore.textContent='';}
+}
+async function refreshOnlineRanking(playerEntry=null){
+  try{
+    const top=await fetchTopScores();
+    let own=playerEntry;
+    if(!own){const nick=getSavedNickname();if(nick)own=await fetchBestForNickname(nick);}
+    let rank=null;
+    if(own)rank=await fetchRankForId(own.id);
+    renderOnlineRanking(top,own,rank);
+  }catch(err){
+    console.warn('SPG ranking online indisponível:',err);
+    ui.rankingRows.innerHTML='';
+    ui.ownRankPos.textContent='';ui.ownRankName.textContent='SEM REDE';ui.ownRankScore.textContent='';
+  }
+}
+function showRanking(playerEntry=null){
+  ui.gameOver.style.display='none';ui.start.style.display='none';ui.howTo.style.display='none';ui.rankingScreen.style.display='flex';
+  ui.rankingRows.innerHTML='';ui.ownRankPos.textContent='';ui.ownRankName.textContent='';ui.ownRankScore.textContent='';
+  syncOverlayHud();
+  refreshOnlineRanking(playerEntry);
+}
 function returnToGameOver(){ui.rankingScreen.style.display='none';ui.gameOver.style.display='flex';syncOverlayHud();}
-let lastSubmittedPrototypeEntry=null;
 function finishRun(){
   if(gameOver)return;
   gameOver=true;gameOverPending=false;rolling=false;paused=false;stopRunMusic(true);playSfxSafe('gameOver');saveHighScore();updateGameOverUI();updateUI();ui.gameOver.style.display='flex';syncOverlayHud();running=false;
@@ -2011,6 +2084,7 @@ function showHowTo(){hidePreRunOverlay(true);ui.start.style.display='none';ui.ga
 function reset(){
   rebuildCityWorld();rebuildStage5World();
   elapsed=0;ambientElapsed=0;distance=0;nextSpawn=rand(225,330);score=0;falls=0;speed=0;runMaxDisplaySpeed=0;laneY=814;rolling=false;gameOver=false;gameOverPending=false;
+  currentRunId=makeRunId();currentRunSubmitted=false;scoreSubmitInFlight=false;lastSubmittedOnlineEntry=null;
   rebuildProceduralSidewalk();
   rebuildProceduralWall();
   tries=maxTries;obstaclesCleared=0;comboChain=0;comboMult=1;maxComboMult=1;
@@ -2736,8 +2810,29 @@ ui.nicknameInput.addEventListener('pointerdown',e=>{e.stopPropagation();try{ui.n
 ui.nicknameInput.addEventListener('click',e=>{e.stopPropagation();try{ui.nicknameInput.focus({preventScroll:true});}catch(_){ui.nicknameInput.focus();}});
 ui.nicknameInput.addEventListener('input',()=>{const v=normalizeNickname(ui.nicknameInput.value);if(ui.nicknameInput.value!==v)ui.nicknameInput.value=v;ui.nicknameError.classList.remove('show');});
 ui.nicknameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ui.sendScoreBtn.click();}});
-ui.sendScoreBtn.addEventListener('click',e=>{e.stopPropagation();const name=normalizeNickname(ui.nicknameInput.value);ui.nicknameInput.value=name;if(!name){ui.nicknameError.classList.add('show');ui.nicknameInput.focus();return;}saveNickname(name);const entry=currentRunEntry(name);lastSubmittedPrototypeEntry=entry;saveMockScore(entry);ui.submitToast.textContent='SCORE SALVO NESTE TESTE';ui.submitToast.classList.add('show');setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(entry);},500);});
-ui.viewRankingBtn.addEventListener('click',e=>{e.stopPropagation();showRanking(lastSubmittedPrototypeEntry);});
+ui.sendScoreBtn.addEventListener('click',async e=>{
+  e.stopPropagation();
+  const name=normalizeNickname(ui.nicknameInput.value);ui.nicknameInput.value=name;
+  if(name.length<3){ui.nicknameError.textContent='USE 3 A 8 CARACTERES';ui.nicknameError.classList.add('show');try{ui.nicknameInput.focus({preventScroll:true});}catch(_){ui.nicknameInput.focus();}return;}
+  saveNickname(name);
+  if(scoreSubmitInFlight)return;
+  if(currentRunSubmitted&&lastSubmittedOnlineEntry){ui.submitToast.textContent='SCORE JÁ ENVIADO';ui.submitToast.classList.add('show');setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(lastSubmittedOnlineEntry);},450);return;}
+  scoreSubmitInFlight=true;ui.submitToast.textContent='ENVIANDO SCORE...';ui.submitToast.classList.add('show');
+  try{
+    const entry=await submitScoreOnline(currentRunEntry(name));
+    lastSubmittedOnlineEntry=entry;currentRunSubmitted=true;
+    ui.submitToast.textContent='SCORE ENVIADO!';
+    try{if(typeof gtag==='function')gtag('event','score_submit',{score:entry.score,nickname_length:name.length});}catch(_){}
+    setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(entry);},500);
+  }catch(err){
+    console.warn('SPG score submit falhou:',err);
+    const msg=String(err&&err.message||'');
+    ui.submitToast.textContent=/duplicate key|unique/i.test(msg)?'SCORE JÁ ENVIADO':'ERRO AO ENVIAR · TENTE DE NOVO';
+    ui.submitToast.classList.add('show');
+    setTimeout(()=>ui.submitToast.classList.remove('show'),2200);
+  }finally{scoreSubmitInFlight=false;}
+});
+ui.viewRankingBtn.addEventListener('click',e=>{e.stopPropagation();showRanking(lastSubmittedOnlineEntry);});
 ui.rankBackBtn.addEventListener('click',e=>{e.stopPropagation();returnToGameOver();});
 ui.rankRestartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
 syncOverlayHud();
