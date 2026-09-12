@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.1B QA FIX 10 — ranking rows anchored individually to the baked artwork to eliminate cumulative vertical drift; own-position tuning preserved. SPG 1.0 MASTER remains untouched. -->
+<!-- SPG 1.1 FINAL CANDIDATE — ranking online + GA4 gameplay events. Visual/UI LOCK inherited from QA FIX 11. SPG 1.0 MASTER remains untouched. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -407,6 +407,18 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-YOEX455NQF');
+    // SPG analytics helper. QA URLs do not pollute production metrics.
+    const SPG_ANALYTICS_DISABLED = (()=>{
+      try{
+        const q=new URLSearchParams(location.search);
+        return location.protocol==='file:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || q.has('qa') || q.has('qaworld');
+      }catch(_){return false;}
+    })();
+    function spgTrack(eventName, params={}){
+      if(SPG_ANALYTICS_DISABLED)return;
+      try{ if(typeof gtag==='function') gtag('event',eventName,params); }catch(_){}
+    }
+    // Custom events: game_start, game_over, score_submit, ranking_view, play_again.
   </script>
 </head>
 <body>
@@ -1982,6 +1994,7 @@ let currentRunId='';
 let currentRunSubmitted=false;
 let scoreSubmitInFlight=false;
 let lastSubmittedOnlineEntry=null;
+let gaRunStarted=false;
 
 function getSavedNickname(){try{return (localStorage.getItem('spgNickname')||'').slice(0,8)}catch(_){return ''}}
 function saveNickname(v){try{localStorage.setItem('spgNickname',v)}catch(_){} }
@@ -2055,18 +2068,20 @@ async function refreshOnlineRanking(playerEntry=null){
     ui.ownRankPos.textContent='';ui.ownRankName.textContent='SEM REDE';ui.ownRankScore.textContent='';
   }
 }
-function showRanking(playerEntry=null){
+function showRanking(playerEntry=null,origin='game_over'){
   ui.gameOver.style.display='none';ui.start.style.display='none';ui.howTo.style.display='none';ui.rankingScreen.style.display='flex';
   ui.rankingRows.innerHTML='';ui.ownRankPos.textContent='';ui.ownRankName.textContent='';ui.ownRankScore.textContent='';
   syncOverlayHud();
+  spgTrack('ranking_view',{origin,score:Math.round(score),submitted:currentRunSubmitted?1:0});
   refreshOnlineRanking(playerEntry);
 }
 function returnToGameOver(){ui.rankingScreen.style.display='none';ui.gameOver.style.display='flex';syncOverlayHud();}
 function finishRun(){
   if(gameOver)return;
   gameOver=true;gameOverPending=false;rolling=false;paused=false;stopRunMusic(true);playSfxSafe('gameOver');saveHighScore();updateGameOverUI();updateUI();ui.gameOver.style.display='flex';syncOverlayHud();running=false;
+  spgTrack('game_over',{score:Math.round(score),time_seconds:Math.max(1,Math.round(elapsed)),max_speed:Math.round(runMaxDisplaySpeed),falls:Number(falls)||0});
 }
-function startRolling(){if(rolling)return;rolling=true;speed=CFG.startSpeed;setState('locomotion');lastPumpAt=elapsed;playSfxSafe('vai');flash('VAI!');}
+function startRolling(){if(rolling)return;rolling=true;speed=CFG.startSpeed;setState('locomotion');lastPumpAt=elapsed;playSfxSafe('vai');flash('VAI!');if(!gaRunStarted){gaRunStarted=true;spgTrack('game_start',{start_speed:Math.round(displaySpeedKmh(speed))});}}
 function speedGainTaper(){
   if(speed<=65)return 1;
   if(speed<=90){const t=clamp((speed-65)/25,0,1);return lerp(1,0.48,t);}
@@ -2098,7 +2113,7 @@ function showStartScreen(){hidePreRunOverlay(true);ui.howTo.style.display='none'
 function showHowTo(){hidePreRunOverlay(true);ui.start.style.display='none';ui.gameOver.style.display='none';ui.rankingScreen.style.display='none';ui.howTo.style.display='flex';syncOverlayHud();}
 function reset(){
   rebuildCityWorld();rebuildStage5World();
-  elapsed=0;ambientElapsed=0;distance=0;nextSpawn=rand(225,330);score=0;falls=0;speed=0;runMaxDisplaySpeed=0;laneY=814;rolling=false;gameOver=false;gameOverPending=false;
+  elapsed=0;ambientElapsed=0;distance=0;nextSpawn=rand(225,330);score=0;falls=0;speed=0;runMaxDisplaySpeed=0;laneY=814;rolling=false;gameOver=false;gameOverPending=false;gaRunStarted=false;
   currentRunId=makeRunId();currentRunSubmitted=false;scoreSubmitInFlight=false;lastSubmittedOnlineEntry=null;
   rebuildProceduralSidewalk();
   rebuildProceduralWall();
@@ -2820,7 +2835,7 @@ ui.startBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRu
 ui.howBtn.addEventListener('click',e=>{e.stopPropagation();showHowTo();});
 ui.howBackBtn.addEventListener('click',e=>{e.stopPropagation();showStartScreen();});
 ui.howStartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
-ui.restartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
+ui.restartBtn.addEventListener('click',e=>{e.stopPropagation();spgTrack('play_again',{source:'game_over',previous_score:Math.round(score)});startGame();startRunMusicSafe();});
 ui.nicknameInput.addEventListener('pointerdown',e=>{e.stopPropagation();try{ui.nicknameInput.focus({preventScroll:true});}catch(_){ui.nicknameInput.focus();}});
 ui.nicknameInput.addEventListener('click',e=>{e.stopPropagation();try{ui.nicknameInput.focus({preventScroll:true});}catch(_){ui.nicknameInput.focus();}});
 ui.nicknameInput.addEventListener('input',()=>{const v=normalizeNickname(ui.nicknameInput.value);if(ui.nicknameInput.value!==v)ui.nicknameInput.value=v;ui.nicknameError.classList.remove('show');});
@@ -2831,14 +2846,14 @@ ui.sendScoreBtn.addEventListener('click',async e=>{
   if(name.length<3){ui.nicknameError.textContent='USE 3 A 8 CARACTERES';ui.nicknameError.classList.add('show');try{ui.nicknameInput.focus({preventScroll:true});}catch(_){ui.nicknameInput.focus();}return;}
   saveNickname(name);
   if(scoreSubmitInFlight)return;
-  if(currentRunSubmitted&&lastSubmittedOnlineEntry){ui.submitToast.textContent='SCORE JÁ ENVIADO';ui.submitToast.classList.add('show');setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(lastSubmittedOnlineEntry);},450);return;}
+  if(currentRunSubmitted&&lastSubmittedOnlineEntry){ui.submitToast.textContent='SCORE JÁ ENVIADO';ui.submitToast.classList.add('show');setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(lastSubmittedOnlineEntry,'score_submit_duplicate');},450);return;}
   scoreSubmitInFlight=true;ui.submitToast.textContent='ENVIANDO SCORE...';ui.submitToast.classList.add('show');
   try{
     const entry=await submitScoreOnline(currentRunEntry(name));
     lastSubmittedOnlineEntry=entry;currentRunSubmitted=true;
     ui.submitToast.textContent='SCORE ENVIADO!';
-    try{if(typeof gtag==='function')gtag('event','score_submit',{score:entry.score,nickname_length:name.length});}catch(_){}
-    setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(entry);},500);
+    spgTrack('score_submit',{score:entry.score,time_seconds:Math.max(1,Math.round(elapsed)),max_speed:Math.round(runMaxDisplaySpeed),nickname_length:name.length});
+    setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(entry,'score_submit');},500);
   }catch(err){
     console.warn('SPG score submit falhou:',err);
     const msg=String(err&&err.message||'');
@@ -2847,9 +2862,9 @@ ui.sendScoreBtn.addEventListener('click',async e=>{
     setTimeout(()=>ui.submitToast.classList.remove('show'),2200);
   }finally{scoreSubmitInFlight=false;}
 });
-ui.viewRankingBtn.addEventListener('click',e=>{e.stopPropagation();showRanking(lastSubmittedOnlineEntry);});
+ui.viewRankingBtn.addEventListener('click',e=>{e.stopPropagation();showRanking(lastSubmittedOnlineEntry,'game_over_button');});
 ui.rankBackBtn.addEventListener('click',e=>{e.stopPropagation();returnToGameOver();});
-ui.rankRestartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
+ui.rankRestartBtn.addEventListener('click',e=>{e.stopPropagation();spgTrack('play_again',{source:'ranking',previous_score:Math.round(score)});startGame();startRunMusicSafe();});
 syncOverlayHud();
 
 // V96 DIRECT FIX — clean base V93 + exact approved deltas only.
