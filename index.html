@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.1B QA FIX 09 — ranking rows lowered 2px and own-position row lowered 12px inside existing container; ghost ranking preserved. SPG 1.0 MASTER remains untouched. -->
+<!-- SPG 1.1B QA FIX 10 — ranking rows anchored individually to the baked artwork to eliminate cumulative vertical drift; own-position tuning preserved. SPG 1.0 MASTER remains untouched. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -366,8 +366,20 @@
 #restartBtn{left:17.75% !important;top:86.75% !important;width:64.30% !important;height:7.60% !important;}
 #submitToast{left:20%;top:64.4%;width:60%;padding:7px 10px;border-radius:999px;background:rgba(8,9,10,.92);border:1px solid rgba(255,214,0,.7);color:#ffd500;text-align:center;font:400 clamp(11px,2.8vw,18px)/1 'Permanent Marker','Comic Sans MS',cursive;opacity:0;transform:translateY(6px);transition:.18s;pointer-events:none;}
 #submitToast.show{opacity:1;transform:translateY(0);}
-#rankingRows{left:16.1%;top:29.3%;width:67.0%;height:38.6%;display:grid;grid-template-rows:repeat(10,1fr);gap:.45%;}
-.rankingRow{display:grid;grid-template-columns:21% 43% 36%;align-items:center;background:transparent !important;border:0;border-radius:0;color:#eee;overflow:hidden;box-shadow:none !important;}
+#rankingRows{left:16.1%;top:0;width:67.0%;height:100%;display:block;}
+.rankingRow{position:absolute;left:0;width:100%;display:grid;grid-template-columns:21% 43% 36%;align-items:center;background:transparent !important;border:0;border-radius:0;color:#eee;overflow:hidden;box-shadow:none !important;}
+/* Rows are mapped to the actual centers of the 10 baked boxes in the approved 941×1672 artwork.
+   This removes the cumulative drift created by an equal-height CSS grid. */
+#rankingRows .rankingRow:nth-child(1){top:29.5455%;height:3.6483%;}
+#rankingRows .rankingRow:nth-child(2){top:33.6124%;height:3.2297%;}
+#rankingRows .rankingRow:nth-child(3){top:37.5598%;height:3.2895%;}
+#rankingRows .rankingRow:nth-child(4){top:41.3278%;height:3.4689%;}
+#rankingRows .rankingRow:nth-child(5){top:45.3947%;height:3.1699%;}
+#rankingRows .rankingRow:nth-child(6){top:49.1627%;height:3.4689%;}
+#rankingRows .rankingRow:nth-child(7){top:53.2297%;height:3.2297%;}
+#rankingRows .rankingRow:nth-child(8){top:57.0574%;height:3.4689%;}
+#rankingRows .rankingRow:nth-child(9){top:61.0048%;height:3.2895%;}
+#rankingRows .rankingRow:nth-child(10){top:64.8923%;height:3.3493%;}
 .rankingRow.isTop{background:transparent !important;color:#f6d21c;}
 .rankingRow.isPlayer{background:transparent !important;box-shadow:none !important;}
 .rankPos,.rankName,.rankScore{display:flex;align-items:center;height:100%;white-space:nowrap;overflow:hidden;background:transparent !important;text-shadow:none;}
@@ -375,7 +387,7 @@
 .rankPos{justify-content:center;font:400 clamp(11px,3.25vw,25px)/1 'Permanent Marker','Comic Sans MS',cursive;}
 .rankName{justify-content:center;padding:0 2%;font:400 clamp(11px,3.15vw,24px)/1 'Permanent Marker','Comic Sans MS',cursive;text-transform:uppercase;}
 .rankScore{justify-content:center;padding:0 2%;font:400 clamp(12px,3.25vw,25px)/1 'Anton','Arial Narrow',Arial,sans-serif;letter-spacing:0;}
-#rankingRows .rankPos,#rankingRows .rankName,#rankingRows .rankScore{transform:translateY(2px);}
+#rankingRows .rankPos,#rankingRows .rankName,#rankingRows .rankScore{transform:translateY(1px);}
 .rankCrown{font-size:.78em;margin-right:3px;color:#f2cc05;}
 #rankingOwnRow{left:16.7%;top:71.95%;width:65.9%;height:4.05%;display:grid;grid-template-columns:21% 43% 36%;align-items:center;background:transparent !important;border:0;border-radius:0;color:#fff;overflow:hidden;}
 #rankingOwnRow .rankPos,#rankingOwnRow .rankName{font:400 clamp(11px,3.15vw,24px)/1 'Permanent Marker','Comic Sans MS',cursive;background:transparent !important;}
