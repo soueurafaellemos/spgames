@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.1A — Ranking UI Prototype. SPG 1.0 MASTER remains untouched. -->
+<!-- SPG 1.1A QA FIX 02 — Game Over dynamic alignment + true invisible hit zones + nickname keyboard isolation. SPG 1.0 MASTER remains untouched. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -342,47 +342,28 @@
 }
 .spgScreenArt{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none;}
 .spgDynamic{position:absolute;z-index:2;}
-#gameOver .goDynValue{display:flex;align-items:center;justify-content:center;color:#111;font-family:'Anton','Arial Narrow',Arial,sans-serif;font-size:clamp(24px,6.1vw,46px);line-height:1;white-space:nowrap;transform:skew(-4deg);text-shadow:0 1px 0 rgba(255,255,255,.16);}
-#goScore{left:9.0%;top:40.0%;width:23.8%;height:4.65%;background:transparent;}
-#goTime{left:37.6%;top:40.0%;width:25.0%;height:4.65%;background:transparent;}
-#goSpeed{left:66.2%;top:40.0%;width:24.3%;height:4.65%;background:transparent;font-size:clamp(20px,5.0vw,39px);}
+#gameOver .goDynValue{display:flex;align-items:center;justify-content:center;color:#111;font-family:'Anton','Arial Narrow',Arial,sans-serif;font-size:clamp(22px,5.0vw,38px);line-height:1;white-space:nowrap;transform:none;text-shadow:0 1px 0 rgba(255,255,255,.12);font-variant-numeric:tabular-nums;}
+/* Exact slots measured from the approved 941x1672 Game Over artwork. */
+#goScore{left:8.71%;top:39.00%;width:22.53%;height:5.32%;background:transparent;}
+#goTime{left:38.15%;top:38.94%;width:23.59%;height:5.38%;background:transparent;}
+#goSpeed{left:68.01%;top:39.23%;width:23.80%;height:5.08%;background:transparent;font-size:clamp(18px,4.1vw,31px);}
 #nicknameInput{
-  left:23.2%;top:51.0%;width:53.0%;height:5.8%;z-index:4;
-  border:0;outline:0;background:transparent;color:#f4f4f4;border-radius:2px;
-  font-family:'Permanent Marker','Comic Sans MS',cursive;font-size:clamp(25px,6vw,48px);line-height:1;
-  text-transform:uppercase;padding:0 4%;caret-color:#fff;box-shadow:none;
+  left:23.91%;top:51.38%;width:51.97%;height:5.98%;z-index:8;
+  border:0;outline:0;background:transparent;color:#f4f4f4;border-radius:0;
+  font-family:'Permanent Marker','Comic Sans MS',cursive;font-size:clamp(24px,5.2vw,40px);line-height:1;
+  text-transform:uppercase;padding:0 3.2%;caret-color:#fff;box-shadow:none;
+  pointer-events:auto !important;touch-action:manipulation !important;user-select:text !important;-webkit-user-select:text !important;
 }
+
 #nicknameInput::placeholder{color:#aaa;opacity:.75;}
 #nicknameInput:focus{background:rgba(255,255,255,.025);}
 #nicknameError{left:23%;top:57.4%;width:54%;text-align:center;color:#ffdf00;font:400 clamp(10px,2.6vw,18px)/1.2 'Permanent Marker','Comic Sans MS',cursive;opacity:0;transition:opacity .15s;}
 #nicknameError.show{opacity:1;}
-.spgHit{position:absolute;z-index:6;border:0;background:transparent;color:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-/* QA 1.1A: the button artwork is already baked into screen_gameover_base.png.
-   Keep only invisible hit areas and neutralize legacy #gameOver button styling. */
-#gameOver .spgHit{
-  position:absolute !important;
-  z-index:6 !important;
-  border:0 !important;
-  background:transparent !important;
-  color:transparent !important;
-  padding:0 !important;
-  margin:0 !important;
-  min-width:0 !important;
-  min-height:0 !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
-  text-shadow:none !important;
-  font-size:0 !important;
-  line-height:0 !important;
-  letter-spacing:0 !important;
-  text-transform:none !important;
-  appearance:none !important;
-  -webkit-appearance:none !important;
-  opacity:1 !important;
-}
-#sendScoreBtn{left:17.2% !important;top:69.4% !important;width:65.0% !important;height:7.3% !important;}
-#viewRankingBtn{left:17.2% !important;top:77.1% !important;width:65.0% !important;height:7.3% !important;}
-#restartBtn{left:17.2% !important;top:85.4% !important;width:65.0% !important;height:7.4% !important;}
+.spgHit{position:absolute !important;z-index:7 !important;background:transparent !important;border:0 !important;color:transparent !important;font-size:0 !important;line-height:0 !important;padding:0 !important;margin:0 !important;box-shadow:none !important;outline:0 !important;cursor:pointer;pointer-events:auto !important;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+/* Button visuals are 100% baked into the approved artwork. These are click/tap zones only. */
+#sendScoreBtn{left:17.85% !important;top:70.45% !important;width:64.00% !important;height:7.20% !important;}
+#viewRankingBtn{left:17.75% !important;top:78.10% !important;width:64.20% !important;height:7.15% !important;}
+#restartBtn{left:17.75% !important;top:86.75% !important;width:64.30% !important;height:7.60% !important;}
 #submitToast{left:20%;top:64.4%;width:60%;padding:7px 10px;border-radius:999px;background:rgba(8,9,10,.92);border:1px solid rgba(255,214,0,.7);color:#ffd500;text-align:center;font:400 clamp(11px,2.8vw,18px)/1 'Permanent Marker','Comic Sans MS',cursive;opacity:0;transform:translateY(6px);transition:.18s;pointer-events:none;}
 #submitToast.show{opacity:1;transform:translateY(0);}
 #rankingRows{left:16.1%;top:29.3%;width:67.0%;height:38.6%;display:grid;grid-template-rows:repeat(10,1fr);gap:.45%;}
@@ -463,12 +444,12 @@
     <div id="goScore" class="spgDynamic goDynValue">0</div>
     <div id="goTime" class="spgDynamic goDynValue">00:00</div>
     <div id="goSpeed" class="spgDynamic goDynValue">0 km/h</div>
-    <input id="nicknameInput" class="spgDynamic" maxlength="8" inputmode="text" autocomplete="nickname" autocapitalize="characters" spellcheck="false" aria-label="Seu nome, máximo 8 caracteres" placeholder="NOME">
+    <input id="nicknameInput" class="spgDynamic" type="text" maxlength="8" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Seu nome, máximo 8 caracteres" placeholder="NOME">
     <div id="nicknameError" class="spgDynamic">DIGITE SEU NOME</div>
     <div id="submitToast" class="spgDynamic">SCORE SALVO NESTE TESTE</div>
-    <button id="sendScoreBtn" class="spgHit" aria-label="Enviar score">Enviar score</button>
-    <button id="viewRankingBtn" class="spgHit" aria-label="Ver ranking">Ver ranking</button>
-    <button id="restartBtn" class="spgHit" aria-label="Jogar de novo">Jogar de novo</button>
+    <div id="sendScoreBtn" class="spgHit" role="button" aria-label="Enviar score"></div>
+    <div id="viewRankingBtn" class="spgHit" role="button" aria-label="Ver ranking"></div>
+    <div id="restartBtn" class="spgHit" role="button" aria-label="Jogar de novo"></div>
   </div>
   <div id="rankingScreen" aria-label="Ranking">
     <img class="spgScreenArt" src="assets/screen_ranking_base.png" alt="">
@@ -476,8 +457,8 @@
     <div id="rankingOwnRow" class="spgDynamic">
       <div id="ownRankPos" class="rankPos">—</div><div id="ownRankName" class="rankName">—</div><div id="ownRankScore" class="rankScore">—</div>
     </div>
-    <button id="rankBackBtn" class="spgHit" aria-label="Voltar">Voltar</button>
-    <button id="rankRestartBtn" class="spgHit" aria-label="Jogar de novo">Jogar de novo</button>
+    <div id="rankBackBtn" class="spgHit" role="button" aria-label="Voltar"></div>
+    <div id="rankRestartBtn" class="spgHit" role="button" aria-label="Jogar de novo"></div>
   </div>
 </div>
 <script>
@@ -2726,15 +2707,21 @@ function finishPointer(e){
 }
 stage.addEventListener('pointerup',finishPointer);stage.addEventListener('pointercancel',finishPointer);
 
+function isTextEntryTarget(target){
+  return !!target && (target===ui.nicknameInput || target.tagName==='INPUT' || target.tagName==='TEXTAREA' || target.isContentEditable);
+}
 addEventListener('keydown',e=>{
+  /* Never let gameplay shortcuts consume nickname typing (R used to restart the run). */
+  if(isTextEntryTarget(e.target))return;
   if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();
   if(running&&['ArrowUp','ArrowDown','KeyW','KeyS','Space','KeyX'].includes(e.code))hidePreRunOverlay();
   if(e.code==='ArrowUp'||e.code==='KeyW')keys.up=true;if(e.code==='ArrowDown'||e.code==='KeyS')keys.down=true;
   if(e.code==='Space'&&!e.repeat)beginJump(true);
   if(e.code==='KeyX'&&!e.repeat)requestSpin();
-  if(e.code==='KeyR'){startGame();flash('RESET')}if(e.code==='KeyD')showDebug=!showDebug;if((e.code==='Enter'||e.code==='NumpadEnter')&&gameOver&&document.activeElement!==ui.nicknameInput)ui.sendScoreBtn.click();
+  if(e.code==='KeyR'){startGame();flash('RESET')}if(e.code==='KeyD')showDebug=!showDebug;if((e.code==='Enter'||e.code==='NumpadEnter')&&gameOver)ui.sendScoreBtn.click();
 });
 addEventListener('keyup',e=>{
+  if(isTextEntryTarget(e.target))return;
   if(e.code==='ArrowUp'||e.code==='KeyW')keys.up=false;if(e.code==='ArrowDown'||e.code==='KeyS')keys.down=false;
   if(e.code==='Space')setJumpHeld(false);
 });
@@ -2743,6 +2730,8 @@ ui.howBtn.addEventListener('click',e=>{e.stopPropagation();showHowTo();});
 ui.howBackBtn.addEventListener('click',e=>{e.stopPropagation();showStartScreen();});
 ui.howStartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
 ui.restartBtn.addEventListener('click',e=>{e.stopPropagation();startGame();startRunMusicSafe();});
+ui.nicknameInput.addEventListener('pointerdown',e=>{e.stopPropagation();});
+ui.nicknameInput.addEventListener('click',e=>{e.stopPropagation();});
 ui.nicknameInput.addEventListener('input',()=>{const v=normalizeNickname(ui.nicknameInput.value);if(ui.nicknameInput.value!==v)ui.nicknameInput.value=v;ui.nicknameError.classList.remove('show');});
 ui.nicknameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ui.sendScoreBtn.click();}});
 ui.sendScoreBtn.addEventListener('click',e=>{e.stopPropagation();const name=normalizeNickname(ui.nicknameInput.value);ui.nicknameInput.value=name;if(!name){ui.nicknameError.classList.add('show');ui.nicknameInput.focus();return;}saveNickname(name);const entry=currentRunEntry(name);lastSubmittedPrototypeEntry=entry;saveMockScore(entry);ui.submitToast.textContent='SCORE SALVO NESTE TESTE';ui.submitToast.classList.add('show');setTimeout(()=>{ui.submitToast.classList.remove('show');showRanking(entry);},500);});
