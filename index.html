@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.2 SPEED PROGRESSION V01 — natural auto-acceleration from 0 km/h + pump as extra acceleration + stronger progressive speed perception. SPG 1.1 preserved in archive/spg-1.1-final. -->
+<!-- SPG 1.2 SPEED PROGRESSION V02 — natural auto-acceleration from 0 km/h + pump as extra acceleration + stronger progressive speed perception. SPG 1.1 preserved in archive/spg-1.1-final. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&display=swap" rel="stylesheet">
-<title>São Paulo Games — SPG 1.2 Speed Progression</title>
+<title>São Paulo Games — SPG 1.2 Speed Progression V02</title>
 <style>
   :root { --yellow:#f6bd13; --red:#e83b20; --ink:#080a0d; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -508,13 +508,13 @@ const CFG={
   keyboardLateralPxPerSec:190,
   touchSensitivity:1.0,
   pumpTravel:46,
-  pumpBaseGain:3.10,
-  pumpTimeRampSeconds:60,
-  pumpTimeRampAmount:0.45,
-  pumpMultiplierCap:2.20,
+  pumpBaseGain:2.25,
+  pumpTimeRampSeconds:90,
+  pumpTimeRampAmount:0.25,
+  pumpMultiplierCap:1.65,
   decayDelay:1.15,
-  excessDecayPerSecond:1.65,
-  autoAccelPerSecond:8.50,
+  excessDecayPerSecond:1.30,
+  autoAccelPerSecond:9.25,
   naturalSpeedCapKmh:24,
 
   // Fixed-height jump. Holding NEVER increases height: it only adds hang time at the apex.
@@ -1857,9 +1857,9 @@ function fmtScore(v){return String(Math.max(0,Math.floor(v))).padStart(6,'0')}
 function displaySpeedKmh(v){return v*(30/145)}
 function internalSpeedForKmh(kmh){return clamp(kmh,0,30)*(CFG.maxSpeed/30)}
 function naturalSpeedKmh(t=elapsed){
-  // Natural run curve: 0→8 (10s), 8→15 (30s), 15→20 (60s), 20→24 (90s).
-  // After 90s the passive speed stabilizes at 24 km/h; pump can still push to 30.
-  const keys=[[0,0],[10,8],[30,15],[60,20],[90,CFG.naturalSpeedCapKmh]];
+  // V02 natural curve: rhythm arrives earlier, while the top end remains earned.
+  // 0→7 (5s), 11 (10s), 15 (20s), 19 (35s), 22 (60s), 24 (90s).
+  const keys=[[0,0],[5,7],[10,11],[20,15],[35,19],[60,22],[90,CFG.naturalSpeedCapKmh]];
   const tt=Math.max(0,t);
   for(let i=1;i<keys.length;i++){
     const [t1,v1]=keys[i];
@@ -1868,6 +1868,17 @@ function naturalSpeedKmh(t=elapsed){
   return CFG.naturalSpeedCapKmh;
 }
 function naturalSpeedInternal(t=elapsed){return internalSpeedForKmh(naturalSpeedKmh(t))}
+function progressiveSpeedCapKmh(t=elapsed){
+  // Prevents pump from reaching 30 too early. The ceiling opens progressively.
+  const keys=[[0,14],[15,20],[30,23],[45,25],[60,27],[90,30]];
+  const tt=Math.max(0,t);
+  for(let i=1;i<keys.length;i++){
+    const [t1,v1]=keys[i];
+    if(tt<=t1){const [t0,v0]=keys[i-1];return lerp(v0,v1,clamp((tt-t0)/(t1-t0),0,1));}
+  }
+  return 30;
+}
+function progressiveSpeedCapInternal(t=elapsed){return internalSpeedForKmh(progressiveSpeedCapKmh(t))}
 function speedVisualMultiplier(kmh=displaySpeedKmh(speed)){
   // Perception curve deliberately grows faster than the HUD number near the top end.
   if(kmh<=12)return lerp(.92,1.00,clamp(kmh/12,0,1));
@@ -2108,25 +2119,30 @@ function finishRun(){
 function startRolling(){if(rolling)return;rolling=true;speed=CFG.startSpeed;setState('locomotion');lastPumpAt=-99;playSfxSafe('vai');flash('VAI!');if(!gaRunStarted){gaRunStarted=true;spgTrack('game_start',{start_speed:Math.round(displaySpeedKmh(speed))});}}
 function speedGainTaper(){
   const kmh=displaySpeedKmh(speed);
-  if(kmh<=18)return 1;
-  if(kmh<=24)return lerp(1,.65,(kmh-18)/6);
-  if(kmh<=28)return lerp(.65,.38,(kmh-24)/4);
-  return lerp(.38,.18,clamp((kmh-28)/2,0,1));
+  if(kmh<=18)return 1.00;
+  if(kmh<=22)return lerp(1.00,.70,(kmh-18)/4);
+  if(kmh<=25)return lerp(.70,.40,(kmh-22)/3);
+  if(kmh<=27)return lerp(.40,.22,(kmh-25)/2);
+  if(kmh<=29)return lerp(.22,.10,(kmh-27)/2);
+  return lerp(.10,.03,clamp((kmh-29),0,1));
 }
 function triggerPump(){
   const rawGain=CFG.pumpBaseGain*pumpMultiplier()*speedGainTaper();
-  speed=Math.min(CFG.maxSpeed,speed+rawGain);
+  const cap=progressiveSpeedCapInternal(elapsed);
+  speed=Math.min(CFG.maxSpeed,cap,speed+rawGain);
   lastPumpAt=elapsed;
 }
 function updateRunSpeed(dt){
   if(state==='fall'||state==='getup')return;
   const target=naturalSpeedInternal(elapsed);
+  const cap=progressiveSpeedCapInternal(elapsed);
   if(speed<target){
-    speed=Math.min(target,speed+CFG.autoAccelPerSecond*dt);
+    speed=Math.min(target,cap,speed+CFG.autoAccelPerSecond*dt);
   }else if(elapsed-lastPumpAt>CFG.decayDelay&&speed>target){
-    // Pump-earned speed bleeds off slowly toward the ever-rising natural floor; it never drops below it.
+    // Pump-earned speed bleeds off slowly toward the rising natural floor.
     speed=Math.max(target,speed-CFG.excessDecayPerSecond*dt);
   }
+  speed=Math.min(speed,cap,CFG.maxSpeed);
 }
 let lastPumpAt=-99;
 

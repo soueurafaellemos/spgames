@@ -1,0 +1,50 @@
+SPG 1.2 — SPEED PROGRESSION V02
+================================
+
+STATUS: READY FOR PLAYTEST
+
+CALIBRATION V02
+---------------
+Natural acceleration:
+- 0 km/h at start
+- ~7 km/h at 5s
+- ~11 km/h at 10s
+- ~15 km/h at 20s
+- ~19 km/h at 35s
+- ~22 km/h at 60s
+- ~24 km/h at 90s
+
+Pump:
+- Lower base gain than V01
+- 100% gain through 18 km/h
+- ~70% around 22 km/h
+- ~40% around 25 km/h
+- ~22% around 27 km/h
+- ~10% around 29 km/h
+- almost residual from 29→30 km/h
+
+Progressive maximum speed:
+- 0s: ~14 km/h ceiling
+- 15s: ~20 km/h
+- 30s: ~23 km/h
+- 45s: ~25 km/h
+- 60s: ~27 km/h
+- 90s: 30 km/h
+
+Result intended:
+- The game reaches a satisfying cruising rhythm much earlier.
+- 30 km/h can no longer be reached prematurely through aggressive pumping.
+- Pump remains clearly useful, but top speed becomes an earned late-run state.
+- Existing speed-perception effects from V01 remain intact.
+
+LOCKED / UNCHANGED:
+- jump physics
+- hitboxes
+- obstacle behavior
+- ranking / Supabase
+- GA4
+- UI and final screens
+
+TECHNICAL QA
+------------
+Inline JavaScript syntax: PASS
