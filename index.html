@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.1 FINAL CANDIDATE GA4 FIX — corrected Measurement ID G-Y0EX455NQF. Visual/UI LOCK inherited from QA FIX 11. -->
+<!-- SPG 1.2 SPEED PROGRESSION V01 — natural auto-acceleration from 0 km/h + pump as extra acceleration + stronger progressive speed perception. SPG 1.1 preserved in archive/spg-1.1-final. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&display=swap" rel="stylesheet">
-<title>São Paulo Games — V13.22.2 QA Ponte Tráfego Baseline Única / V13.24.19 Traffic 18 Safe + Music</title>
+<title>São Paulo Games — SPG 1.2 Speed Progression</title>
 <style>
   :root { --yellow:#f6bd13; --red:#e83b20; --ink:#080a0d; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -499,19 +499,23 @@ const LANE_MIN=737, LANE_MAX=891;
 const LANE_POINTS=[747,793,839,885];
 
 const CFG={
-  baseSpeed:24,
-  startSpeed:32,
+  // SPG 1.2 — speed now starts at a real 0 km/h and rises naturally with survival time.
+  // Pumping is no longer required to maintain motion: it is an extra acceleration layer.
+  baseSpeed:0,
+  startSpeed:0,
   maxSpeed:145,
   speedPxPerKmh:3.18,
   keyboardLateralPxPerSec:190,
   touchSensitivity:1.0,
   pumpTravel:46,
-  pumpBaseGain:2.15,
-  pumpTimeRampSeconds:45,
-  pumpTimeRampAmount:0.34,
-  pumpMultiplierCap:3.0,
-  decayDelay:0.85,
-  decayPerSecond:2.5,
+  pumpBaseGain:3.10,
+  pumpTimeRampSeconds:60,
+  pumpTimeRampAmount:0.45,
+  pumpMultiplierCap:2.20,
+  decayDelay:1.15,
+  excessDecayPerSecond:1.65,
+  autoAccelPerSecond:8.50,
+  naturalSpeedCapKmh:24,
 
   // Fixed-height jump. Holding NEVER increases height: it only adds hang time at the apex.
   // Short tap = short airtime. Hold = same apex, much longer horizontal travel.
@@ -1851,6 +1855,26 @@ function lerp(a,b,t){return a+(b-a)*t}
 function fmtTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`}
 function fmtScore(v){return String(Math.max(0,Math.floor(v))).padStart(6,'0')}
 function displaySpeedKmh(v){return v*(30/145)}
+function internalSpeedForKmh(kmh){return clamp(kmh,0,30)*(CFG.maxSpeed/30)}
+function naturalSpeedKmh(t=elapsed){
+  // Natural run curve: 0→8 (10s), 8→15 (30s), 15→20 (60s), 20→24 (90s).
+  // After 90s the passive speed stabilizes at 24 km/h; pump can still push to 30.
+  const keys=[[0,0],[10,8],[30,15],[60,20],[90,CFG.naturalSpeedCapKmh]];
+  const tt=Math.max(0,t);
+  for(let i=1;i<keys.length;i++){
+    const [t1,v1]=keys[i];
+    if(tt<=t1){const [t0,v0]=keys[i-1];return lerp(v0,v1,clamp((tt-t0)/(t1-t0),0,1));}
+  }
+  return CFG.naturalSpeedCapKmh;
+}
+function naturalSpeedInternal(t=elapsed){return internalSpeedForKmh(naturalSpeedKmh(t))}
+function speedVisualMultiplier(kmh=displaySpeedKmh(speed)){
+  // Perception curve deliberately grows faster than the HUD number near the top end.
+  if(kmh<=12)return lerp(.92,1.00,clamp(kmh/12,0,1));
+  if(kmh<=20)return lerp(1.00,1.10,(kmh-12)/8);
+  if(kmh<=25)return lerp(1.10,1.22,(kmh-20)/5);
+  return lerp(1.22,1.38,clamp((kmh-25)/5,0,1));
+}
 function pumpMultiplier(){return Math.min(CFG.pumpMultiplierCap,1+(elapsed/CFG.pumpTimeRampSeconds)*CFG.pumpTimeRampAmount)}
 const FEEDBACK_ASSETS={
   spin:'assets/img_790a994976ac9982.webp',
@@ -2081,15 +2105,29 @@ function finishRun(){
   gameOver=true;gameOverPending=false;rolling=false;paused=false;stopRunMusic(true);playSfxSafe('gameOver');saveHighScore();updateGameOverUI();updateUI();ui.gameOver.style.display='flex';syncOverlayHud();running=false;
   spgTrack('game_over',{score:Math.round(score),time_seconds:Math.max(1,Math.round(elapsed)),max_speed:Math.round(runMaxDisplaySpeed),falls:Number(falls)||0});
 }
-function startRolling(){if(rolling)return;rolling=true;speed=CFG.startSpeed;setState('locomotion');lastPumpAt=elapsed;playSfxSafe('vai');flash('VAI!');if(!gaRunStarted){gaRunStarted=true;spgTrack('game_start',{start_speed:Math.round(displaySpeedKmh(speed))});}}
+function startRolling(){if(rolling)return;rolling=true;speed=CFG.startSpeed;setState('locomotion');lastPumpAt=-99;playSfxSafe('vai');flash('VAI!');if(!gaRunStarted){gaRunStarted=true;spgTrack('game_start',{start_speed:Math.round(displaySpeedKmh(speed))});}}
 function speedGainTaper(){
-  if(speed<=65)return 1;
-  if(speed<=90){const t=clamp((speed-65)/25,0,1);return lerp(1,0.48,t);}
-  if(speed<=110){const t=clamp((speed-90)/20,0,1);return lerp(0.48,0.20,t);}
-  const t=clamp((speed-110)/(CFG.maxSpeed-110),0,1);
-  return lerp(0.20,0.08,t);
+  const kmh=displaySpeedKmh(speed);
+  if(kmh<=18)return 1;
+  if(kmh<=24)return lerp(1,.65,(kmh-18)/6);
+  if(kmh<=28)return lerp(.65,.38,(kmh-24)/4);
+  return lerp(.38,.18,clamp((kmh-28)/2,0,1));
 }
-function triggerPump(){const rawGain=CFG.pumpBaseGain*pumpMultiplier()*speedGainTaper();const gain=Math.min(rawGain,CFG.maxSpeed-speed);speed=Math.min(CFG.maxSpeed,speed+rawGain);lastPumpAt=elapsed;}
+function triggerPump(){
+  const rawGain=CFG.pumpBaseGain*pumpMultiplier()*speedGainTaper();
+  speed=Math.min(CFG.maxSpeed,speed+rawGain);
+  lastPumpAt=elapsed;
+}
+function updateRunSpeed(dt){
+  if(state==='fall'||state==='getup')return;
+  const target=naturalSpeedInternal(elapsed);
+  if(speed<target){
+    speed=Math.min(target,speed+CFG.autoAccelPerSecond*dt);
+  }else if(elapsed-lastPumpAt>CFG.decayDelay&&speed>target){
+    // Pump-earned speed bleeds off slowly toward the ever-rising natural floor; it never drops below it.
+    speed=Math.max(target,speed-CFG.excessDecayPerSecond*dt);
+  }
+}
 let lastPumpAt=-99;
 
 function renderTryBoards(){
@@ -2162,7 +2200,8 @@ function requestSpin(){
 function doFall(hitObstacle=null){
   if(invuln>0||state==='fall'||state==='getup')return;
   const preCrash=speed;
-  falls++;tries=Math.max(0,tries-1);speed=Math.max(CFG.baseSpeed,speed*.58);jumpHeight=0;jumpHeld=false;jumpHoldT=0;jumpT=0;spinPending=false;jumpPower=0;jumpPhase='none';jumpPhaseT=0;breakCombo();resetJumpSeq();
+  const naturalFloor=naturalSpeedInternal(elapsed);
+  falls++;tries=Math.max(0,tries-1);speed=Math.max(naturalFloor*.55,speed*.58);jumpHeight=0;jumpHeld=false;jumpHoldT=0;jumpT=0;spinPending=false;jumpPower=0;jumpPhase='none';jumpPhaseT=0;breakCombo();resetJumpSeq();
   // The object that caused the crash can never hit the player a second time.
   if(hitObstacle)hitObstacle.hit=true;
   // Keep world momentum while the fall/get-up plays so large hazards actually clear.
@@ -2210,7 +2249,7 @@ function applyTouchDelta(dy){
 
 function updatePlayer(dt){
   stateT+=dt;invuln=Math.max(0,invuln-dt);applyKeyboardLateral(dt);
-  if(elapsed-lastPumpAt>CFG.decayDelay&&state!=='fall')speed=Math.max(CFG.baseSpeed,speed-CFG.decayPerSecond*dt);
+  updateRunSpeed(dt);
 
   const jumping=(state==='crouch'||state==='takeoff'||state==='airborne'||state==='spin');
   if(jumping){
@@ -2369,9 +2408,8 @@ function updateDog(o,dt){
   else{o.dogPhase='done';o.lane=o.endLane;o.collisionActive=false;}
 }
 function updateObstacles(dt,allowSpawn=true,worldSpeed=speed){
-  const highSpeedVisualT=clamp((displaySpeedKmh(worldSpeed)-25.5)/4.5,0,1);
-  const highSpeedVisualBoost=lerp(1,1.18,Math.pow(highSpeedVisualT,1.25));
-  const vx=worldSpeed*CFG.speedPxPerKmh*highSpeedVisualBoost;distance+=vx*dt;
+  const kmh=displaySpeedKmh(worldSpeed);
+  const vx=worldSpeed*CFG.speedPxPerKmh*speedVisualMultiplier(kmh);distance+=vx*dt;
   if(allowSpawn&&distance>=nextSpawn){
     const active=obstacles.filter(o=>o.x+o.def.w/2>-80&&o.x-o.def.w/2<W+180).length;
     if(active<CFG.maxActiveObstacles){
@@ -2478,7 +2516,8 @@ function frameIndexFor(stateName,def){
   const n=def.frames.length;if(n<=1)return 0;
   if(stateName==='idle')return 0;
   if(stateName==='locomotion'){
-    const speedFactor=clamp(speed/32,.72,1.85);
+    const kmh=displaySpeedKmh(speed);
+    const speedFactor=lerp(.58,2.35,Math.pow(clamp(kmh/30,0,1),.85));
     const cycle=def.durations.reduce((a,b)=>a+b,0)/speedFactor;
     let t=(stateT%cycle)*speedFactor,acc=0;
     for(let i=0;i<n;i++){acc+=def.durations[i];if(t<acc)return i;}
@@ -2596,10 +2635,26 @@ function drawRiverLife(){
   ctx.restore();
 }
 function drawRoadMicroMotion(){
-  ctx.save();ctx.fillStyle='#cfa86d';ctx.globalAlpha=.16;
-  for(const s of roadSpecks){
+  const kmh=displaySpeedKmh(speed);
+  if(kmh<6)return;
+  const t=clamp((kmh-6)/24,0,1);
+  const streakT=Math.pow(t,1.35);
+  ctx.save();
+  ctx.fillStyle='#d8b57b';
+  ctx.globalAlpha=lerp(.035,.22,streakT);
+  for(let i=0;i<roadSpecks.length;i++){
+    const s=roadSpecks[i];
     const x=((s.x-distance*1.00)%760+760)%760-80;
-    ctx.fillRect(Math.round(x),s.y,s.w,1);
+    const w=Math.max(1,Math.round(s.w+streakT*(7+s.w*2.4)));
+    ctx.fillRect(Math.round(x),s.y,w,1);
+  }
+  if(kmh>=24){
+    const hot=clamp((kmh-24)/6,0,1);
+    ctx.globalAlpha=.035+.07*hot;ctx.fillStyle='#f5d49b';
+    for(let i=0;i<roadSpecks.length;i+=3){
+      const s=roadSpecks[i],x=((s.x+190-distance*1.12)%760+760)%760-80;
+      ctx.fillRect(Math.round(x),Math.min(899,s.y+9),Math.round(6+22*hot),1);
+    }
   }
   ctx.restore();
 }
@@ -2714,6 +2769,7 @@ function drawWorld(){
   // Legacy wall-top/seated placements remain empty; only approved wall decals are retained separately.
   drawStage5V87Layer('wallModule');
   ok=drawLoopLayer(worldLayers.road,worldLayerDefs.road)||ok;
+  drawRoadMicroMotion();
   // Stage 1 asphalt remains LOCKED.
   // Stage 3 V4: sidewalk + curb/guide are assembled procedurally from the complete final approved board.
   ok=drawProceduralSidewalk()||ok;
@@ -2746,7 +2802,7 @@ function updateUI(){
   if((state==='crouch'||state==='takeoff'||state==='airborne'||state==='spin')&&jumpHeld){
     const p=clamp(jumpHoldT/CFG.jumpSustainMax,0,1);chargeTxt=` · AIRTIME ${Math.round(p*100)}%`;ui.charge.style.display='block';ui.chargeFill.style.width=`${Math.round(p*100)}%`;
   } else {ui.charge.style.display='none';}
-  ui.state.textContent=`${state.toUpperCase()} · PUMP ×${pumpMultiplier().toFixed(2)} · TRY ${tries}/${maxTries}${chargeTxt} · v0.56`;
+  ui.state.textContent=`${state.toUpperCase()} · PUMP ×${pumpMultiplier().toFixed(2)} · TRY ${tries}/${maxTries}${chargeTxt} · SPG 1.2`;
   if(showDebug){ui.debug.style.display='block';ui.debug.innerHTML=`STATE ${state}<br>rolling ${rolling}<br>gameOver ${gameOver}<br>lane ${laneY.toFixed(0)}<br>jump ${jumpHeight.toFixed(0)}<br>jumpPower ${jumpPower.toFixed(2)}<br>phase ${jumpPhase}<br>hold ${jumpHoldT.toFixed(2)}<br>speed ${displaySpeedKmh(speed).toFixed(1)} km/h [internal ${speed.toFixed(1)}]<br>pump ×${pumpMultiplier().toFixed(2)}<br>tries ${tries}/${maxTries}<br>combo x${comboMult.toFixed(2)} / max x${maxComboMult.toFixed(2)}<br>risk x${riskMultiplier().toFixed(2)}<br>falls ${falls}<br>cleared ${obstaclesCleared}<br>obstacles ${obstacles.length}<br>WORLD V76: V67 ENGINE LOCK / STAGE 5A LOCK<br>timeOfDay ${worldTimeOfDay} (${timeOfDayTheme[worldTimeOfDay].label})`;}else ui.debug.style.display='none';
 }
 function loop(now,runGen=spgRunGeneration){if(!running||runGen!==spgRunGeneration)return;const raw=(now-last)/1000;last=now;const dt=Math.min(.035,raw);if(!paused)update(dt);render();requestAnimationFrame(nextNow=>loop(nextNow,runGen));}
@@ -4719,10 +4775,9 @@ generateGroup=function(){
 };
 
 updateObstacles=function(dt,allowSpawn=true,worldSpeed=speed){
-  // Visual road-speed boost remains speed-only and exactly as before.
-  const highSpeedVisualT=clamp((displaySpeedKmh(worldSpeed)-25.5)/4.5,0,1);
-  const highSpeedVisualBoost=lerp(1,1.18,Math.pow(highSpeedVisualT,1.25));
-  const vx=worldSpeed*CFG.speedPxPerKmh*highSpeedVisualBoost;distance+=vx*dt;
+  // SPG 1.2 keeps the 9C difficulty logic, but uses the stronger progressive world-motion curve.
+  const kmh=displaySpeedKmh(worldSpeed);
+  const vx=worldSpeed*CFG.speedPxPerKmh*speedVisualMultiplier(kmh);distance+=vx*dt;
 
   if(allowSpawn&&distance>=nextSpawn){
     const d=spg9cDifficulty();

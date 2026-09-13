@@ -1,0 +1,24 @@
+SPG 1.2 — SPEED PROGRESSION V01
+================================
+
+STATUS: READY FOR PLAYTEST
+
+Changes:
+- True 0 km/h start.
+- Natural passive speed curve:
+  ~8 km/h at 10s
+  ~15 km/h at 30s
+  ~20 km/h at 60s
+  ~24 km/h at 90s
+- Pump is now extra acceleration, capable of pushing toward 30 km/h.
+- Pump-earned excess speed decays slowly toward the current natural speed floor.
+- Stronger progressive world-motion multiplier as speed rises.
+- Locomotion animation cadence scales across the full 0–30 km/h range.
+- Subtle road motion streaks increase with speed.
+- Existing Stage 9C difficulty logic is preserved and now reads the new speed curve.
+- Jump physics, hitboxes, obstacle rules, UI, ranking, Supabase and GA4 are untouched.
+
+Technical QA:
+- Inline JavaScript syntax checked with Node: PASS.
+- Both base and Stage 9C obstacle-speed update paths use the SPG 1.2 perception multiplier.
+- SPG 1.1 remains archived separately and untouched.
