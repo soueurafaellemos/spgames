@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.2 SPEED PROGRESSION V02 — natural auto-acceleration from 0 km/h + pump as extra acceleration + stronger progressive speed perception. SPG 1.1 preserved in archive/spg-1.1-final. -->
+<!-- SPG 1.2 SPEED PROGRESSION V03 — natural auto-acceleration from 0 km/h + pump as extra acceleration + stronger progressive speed perception. SPG 1.1 preserved in archive/spg-1.1-final. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&display=swap" rel="stylesheet">
-<title>São Paulo Games — SPG 1.2 Speed Progression V02</title>
+<title>São Paulo Games — SPG 1.2 Speed Progression V03</title>
 <style>
   :root { --yellow:#f6bd13; --red:#e83b20; --ink:#080a0d; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -514,7 +514,7 @@ const CFG={
   pumpMultiplierCap:1.65,
   decayDelay:1.15,
   excessDecayPerSecond:1.30,
-  autoAccelPerSecond:9.25,
+  autoAccelPerSecond:27.0,
   naturalSpeedCapKmh:24,
 
   // Fixed-height jump. Holding NEVER increases height: it only adds hang time at the apex.
@@ -1857,9 +1857,10 @@ function fmtScore(v){return String(Math.max(0,Math.floor(v))).padStart(6,'0')}
 function displaySpeedKmh(v){return v*(30/145)}
 function internalSpeedForKmh(kmh){return clamp(kmh,0,30)*(CFG.maxSpeed/30)}
 function naturalSpeedKmh(t=elapsed){
-  // V02 natural curve: rhythm arrives earlier, while the top end remains earned.
-  // 0→7 (5s), 11 (10s), 15 (20s), 19 (35s), 22 (60s), 24 (90s).
-  const keys=[[0,0],[5,7],[10,11],[20,15],[35,19],[60,22],[90,CFG.naturalSpeedCapKmh]];
+  // V03: immediate readable movement without making the rest of the run rush to 30.
+  // Still starts at 0, but reaches ~4 km/h in the first second and ~8 km/h by 4s.
+  // After that, the V02 mid/late pacing is preserved.
+  const keys=[[0,0],[1,4],[4,8],[8,11],[15,14],[22,16],[35,19],[60,22],[90,CFG.naturalSpeedCapKmh]];
   const tt=Math.max(0,t);
   for(let i=1;i<keys.length;i++){
     const [t1,v1]=keys[i];

@@ -1,0 +1,35 @@
+SPG 1.2 — SPEED PROGRESSION V03
+================================
+
+STATUS: READY FOR PLAYTEST
+
+V03 ADJUSTMENT
+--------------
+Goal: remove the "is the game broken?" feeling at the start without making 30 km/h arrive earlier.
+
+Natural speed:
+- 0 km/h at the instant the run starts
+- ~4 km/h at 1s
+- ~8 km/h at 4s
+- ~11 km/h at 8s
+- ~14 km/h at 15s
+- ~16 km/h at 22s
+- ~19 km/h at 35s
+- ~22 km/h at 60s
+- ~24 km/h at 90s
+
+Preserved from V02:
+- progressive top-speed ceiling
+- strong pump taper above 18 km/h
+- 30 km/h only opens fully around 90s
+- speed-perception effects
+- jump physics
+- hitboxes
+- obstacles
+- ranking / Supabase
+- GA4
+- UI
+
+TECHNICAL QA
+------------
+Inline JavaScript syntax: PASS
