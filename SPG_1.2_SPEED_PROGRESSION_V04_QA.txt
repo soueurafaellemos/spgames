@@ -1,0 +1,37 @@
+SPG 1.2 — SPEED PROGRESSION V04
+================================
+
+STATUS: READY FOR PLAYTEST
+
+V04 ADJUSTMENTS
+---------------
+1) Slightly faster opening
+- 0 km/h at start
+- ~5 km/h at 1s
+- ~9 km/h at 4s
+- ~12 km/h at 8s
+- ~14.5 km/h at 15s
+- ~16.5 km/h at 22s
+- ~19 km/h at 35s
+- ~22 km/h at 60s
+- ~24 km/h at 90s
+- Progressive late-game cap and pump taper preserved
+
+2) Mureta proximity
+- The beerman on the wall now tries to spawn near the seated woman on the wall
+- He stays visually close to her whenever there is a valid flat wall span
+- Other protected wall occupants and exclusions remain respected
+
+LOCKED / UNCHANGED
+------------------
+- jump physics
+- hitboxes
+- obstacle behavior
+- ranking / Supabase
+- GA4
+- UI
+- final screens
+
+TECHNICAL QA
+------------
+Inline JavaScript syntax: PASS
