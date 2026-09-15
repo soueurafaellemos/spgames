@@ -1,6 +1,6 @@
 <!-- SPG V13.17 QA: VIDA/AMBIÊNCIA normalizada; pombas intocadas; runner único raro. Base LOCK V13.16.2. -->
 <!-- SPG V13.22.2 QA PONTE/TRÁFEGO: baseline única fixa para 18 veículos (+50% de densidade); direção, velocidade, escala, assets e guard-rail preservados. Base: V13.22.1. -->
-<!-- SPG 1.2 SPEED PROGRESSION V04 — natural auto-acceleration from 0 km/h + pump as extra acceleration + stronger progressive speed perception. SPG 1.1 preserved in archive/spg-1.1-final. -->
+<!-- SPG 1.2 SPEED PROGRESSION V05 — natural auto-acceleration from 0 km/h + pump as extra acceleration + stronger progressive speed perception. SPG 1.1 preserved in archive/spg-1.1-final. -->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&display=swap" rel="stylesheet">
-<title>São Paulo Games — SPG 1.2 Speed Progression V04</title>
+<title>São Paulo Games — SPG 1.2 Speed Progression V05</title>
 <style>
   :root { --yellow:#f6bd13; --red:#e83b20; --ink:#080a0d; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -3588,6 +3588,7 @@ rebuildCityWorld=function(){
 function spgPlaceBeerManOnWall(){
   if(!Array.isArray(stage12SeatPlacements))stage12SeatPlacements=[];
   stage12SeatPlacements=stage12SeatPlacements.filter(v=>!spgSeatHas(v,'beerman'));
+
   const wallCycle=proceduralWallCycleWidth||24000;
   const spans=stage11FlatSpans();
   const scale=0.81225;
@@ -3596,78 +3597,106 @@ function spgPlaceBeerManOnWall(){
 
   const womanPlacement=(stage11Placements||[]).find(p=>p.id==='sitWomanHavaianas');
   const womanDef=womanPlacement?stage11Defs?.sitWomanHavaianas:null;
-  const womanCenter=womanPlacement&&womanDef?spgCircularCenter(womanPlacement.wx,womanDef.w,wallCycle):null;
 
-  const occupied=(stage11Placements||[]).map(p=>{
+  // V05 LOCK: beer man is a visual pair with the seated woman.
+  // World moves from higher wx toward lower screen-x, so a GREATER wx means he is encountered AFTER her.
+  const pairGap=8;
+  const womanRight=womanPlacement&&womanDef ? womanPlacement.wx+womanDef.w : null;
+  const desiredLeft=womanRight!==null ? womanRight+pairGap : null;
+
+  // Woman is intentionally excluded from collision occupancy here so the pair can sit close.
+  const occupied=(stage11Placements||[]).filter(p=>p.id!=='sitWomanHavaianas').map(p=>{
     const dd=stage11Defs?.[p.id];
-    if(!dd)return null;
-    const extraPad=p.id==='sitWomanHavaianas'?24:70;
-    return {c:spgCircularCenter(p.wx,dd.w,wallCycle),r:dd.w/2+extraPad,id:p.id};
+    return dd?{c:spgCircularCenter(p.wx,dd.w,wallCycle),r:dd.w/2+70,id:p.id}:null;
   }).filter(Boolean);
 
-  const familyCenters=(stage11Placements||[]).filter(p=>SPG_MURETA_OCCUPANTS.has(p.id)&&p.id!=='sitWomanHavaianas').map(p=>{
-    const dd=stage11Defs[p.id];
-    return spgCircularCenter(p.wx,dd.w,wallCycle);
-  });
+  const familyCenters=(stage11Placements||[])
+    .filter(p=>SPG_MURETA_OCCUPANTS.has(p.id)&&p.id!=='sitWomanHavaianas')
+    .map(p=>{
+      const dd=stage11Defs[p.id];
+      return spgCircularCenter(p.wx,dd.w,wallCycle);
+    });
+
   const familyMinGap=Math.min(3900,wallCycle*.16);
-  const targets=womanCenter!==null?[womanCenter]:[.85,.80,.90,.73,.95,.68].map(v=>v*wallCycle);
+
+  function validAfterWoman(cand){
+    if(womanRight!==null && cand<womanRight+pairGap)return false;
+    const margin=12;
+    const fitsFlat=spans.some(span=>cand>=span.x0+margin && cand+w<=span.x1-margin);
+    if(!fitsFlat)return false;
+
+    const c=spgCircularCenter(cand,w,wallCycle);
+    if(occupied.some(z=>spgDistance(c,z.c,wallCycle)<w/2+z.r))return false;
+    if(familyCenters.some(fc=>spgDistance(c,fc,wallCycle)<familyMinGap))return false;
+    return true;
+  }
+
   let wx=null;
 
-  for(const target of targets){
-    const sorted=spans.slice().sort((a,b)=>spgDistance((a.x0+a.x1)/2,target,wallCycle)-spgDistance((b.x0+b.x1)/2,target,wallCycle));
-    for(const s of sorted){
-      if(s.x1-s.x0<w+70)continue;
-      const margin=28,minX=s.x0+margin,maxX=s.x1-margin-w;
-      if(maxX<minX)continue;
+  if(desiredLeft!==null){
+    // First choice: immediately after the woman, with only an 8 px world-space gap.
+    for(const off of [0,8,16,28,44,64,88,120,160,210]){
+      const cand=Math.round(desiredLeft+off);
+      if(validAfterWoman(cand)){wx=cand;break;}
+    }
 
-      if(womanCenter!==null){
-        const closeGap=Math.round(((womanDef?.w||118)+w)/2+34);
-        const desiredCenters=[
-          womanCenter+closeGap,womanCenter-closeGap,
-          womanCenter+closeGap+72,womanCenter-closeGap-72,
-          womanCenter+closeGap+132,womanCenter-closeGap-132,
-          womanCenter+closeGap+190,womanCenter-closeGap-190
-        ];
-        for(const desiredCenter of desiredCenters){
-          const desiredLeft=Math.round(desiredCenter-w/2);
-          const cand=Math.max(minX,Math.min(maxX,desiredLeft));
-          const c=spgCircularCenter(cand,w,wallCycle);
-          if(occupied.some(z=>spgDistance(c,z.c,wallCycle)<w/2+z.r))continue;
-          if(familyCenters.some(fc=>spgDistance(c,fc,wallCycle)<familyMinGap))continue;
-          wx=Math.round(cand);break;
-        }
-      }else{
-        const base=Math.max(minX,Math.min(maxX,Math.round(target-w/2)));
-        for(const off of [0,-80,80,-160,160,-240,240,-360,360]){
-          const cand=Math.max(minX,Math.min(maxX,base+off));
-          const c=spgCircularCenter(cand,w,wallCycle);
-          if(occupied.some(z=>spgDistance(c,z.c,wallCycle)<w/2+z.r))continue;
-          if(familyCenters.some(fc=>spgDistance(c,fc,wallCycle)<familyMinGap))continue;
-          wx=Math.round(cand);break;
+    // If her exact wall segment is tight, use the nearest subsequent valid flat segment.
+    // Never search backwards: the man must ALWAYS come after the woman.
+    if(wx===null){
+      const laterSpans=spans
+        .filter(span=>span.x1>desiredLeft)
+        .slice()
+        .sort((a,b)=>Math.max(a.x0+12,desiredLeft)-Math.max(b.x0+12,desiredLeft));
+
+      let best=null,bestDelta=Infinity;
+      for(const span of laterSpans){
+        const minX=Math.max(span.x0+12,desiredLeft);
+        const maxX=span.x1-12-w;
+        if(maxX<minX)continue;
+        for(const off of [0,16,32,56,88,128,176]){
+          const cand=Math.min(maxX,minX+off);
+          if(!validAfterWoman(cand))continue;
+          const delta=cand-desiredLeft;
+          if(delta<bestDelta){bestDelta=delta;best=Math.round(cand);}
+          break;
         }
       }
+      if(best!==null)wx=best;
+    }
+  }
 
+  // Defensive fallback only if the woman is missing from the generated wall layout.
+  if(wx===null && womanRight===null){
+    const targets=[.85,.80,.90,.73,.95,.68].map(v=>v*wallCycle);
+    for(const target of targets){
+      const sorted=spans.slice().sort((a,b)=>spgDistance((a.x0+a.x1)/2,target,wallCycle)-spgDistance((b.x0+b.x1)/2,target,wallCycle));
+      for(const span of sorted){
+        const minX=span.x0+20,maxX=span.x1-20-w;
+        if(maxX<minX)continue;
+        const cand=Math.max(minX,Math.min(maxX,Math.round(target-w/2)));
+        const c=spgCircularCenter(cand,w,wallCycle);
+        if(occupied.some(z=>spgDistance(c,z.c,wallCycle)<w/2+z.r))continue;
+        wx=Math.round(cand);break;
+      }
       if(wx!==null)break;
     }
-    if(wx!==null)break;
   }
 
-  if(wx===null){
-    // Fallback: keep him as near as possible to the seated woman, otherwise keep a valid wall slot.
-    let best=null,bestScore=-1;
-    for(const s of spans){
-      if(s.x1-s.x0<w+70)continue;
-      const cand=Math.round((s.x0+s.x1-w)/2),c=spgCircularCenter(cand,w,wallCycle);
-      if(occupied.some(z=>spgDistance(c,z.c,wallCycle)<w/2+z.r))continue;
-      const score=womanCenter!==null ? -spgDistance(c,womanCenter,wallCycle)
-        : (familyCenters.length?Math.min(...familyCenters.map(fc=>spgDistance(c,fc,wallCycle))):wallCycle);
-      if(score>bestScore){bestScore=score;best=cand;}
-    }
-    wx=best!==null?best:Math.round(wallCycle*.85);
-  }
+  // Absolute order guarantee: if an unusual generated layout leaves no protected slot,
+  // keep him directly after the woman rather than allowing a before-her fallback.
+  if(wx===null && desiredLeft!==null)wx=Math.round(desiredLeft);
+
+  if(wx===null)wx=Math.round(wallCycle*.85);
 
   const seatedBottom=Math.round(501+stage12AnimatedDefs.beerman.h*0.855*0.45)-10;
-  stage12SeatPlacements.push({wx,wallTop:true,supportId:null,supportScale:1,supportBottom:626,chars:[{id:'beerman',dx:0,bottom:seatedBottom,scale,flip:false,animPhase:0,animSpeed:1}]});
+  stage12SeatPlacements.push({
+    wx,
+    wallTop:true,
+    supportId:null,
+    supportScale:1,
+    supportBottom:626,
+    chars:[{id:'beerman',dx:0,bottom:seatedBottom,scale,flip:false,animPhase:0,animSpeed:1}]
+  });
 }
 
 rebuildStage12Animated=function(){

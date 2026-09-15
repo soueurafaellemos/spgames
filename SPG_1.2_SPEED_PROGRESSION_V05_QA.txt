@@ -1,0 +1,34 @@
+SPG 1.2 — SPEED PROGRESSION V05
+================================
+
+STATUS: READY FOR PLAYTEST
+
+V05 — MURETA PAIR ORDER
+-----------------------
+- Speed curve is unchanged from approved V04.
+- The seated woman remains the reference element.
+- The beer man is now placed ALWAYS AFTER the seated woman in world progression.
+- The preferred spacing is only 8 px between the end of the woman's asset box and the start of the beer man's asset box.
+- Placement search never falls back to a position before the woman.
+- If the immediate flat wall segment is too tight, the next valid flat segment AFTER her is used.
+- Existing protected-wall exclusions remain active whenever a valid protected slot exists.
+
+UNCHANGED
+---------
+- V04 speed calibration
+- pump behavior
+- progressive top-speed cap
+- jump physics
+- hitboxes
+- obstacles
+- ranking / Supabase
+- GA4
+- UI
+
+TECHNICAL QA
+------------
+Inline JavaScript syntax: PASS
+Woman asset: PASS
+Beer man asset: PASS
+After-woman order guard: PASS
+8 px preferred pair gap: PASS
